@@ -15,7 +15,7 @@ DEFAULT_SYSTEM_PROMPT = (
 
 
 class AnthropicProvider(Provider):
-    def __init__(self, model: str = "claude-sonnet-4-20250514", system_prompt: str | None = None):
+    def __init__(self, model: str = "claude-sonnet-4-6", system_prompt: str | None = None):
         import anthropic
 
         self.client = anthropic.Anthropic()
@@ -127,7 +127,7 @@ class OpenAIProvider(Provider):
 class XAIProvider(Provider):
     """Grok models via xAI's OpenAI-compatible API."""
 
-    def __init__(self, model: str = "grok-3", system_prompt: str | None = None):
+    def __init__(self, model: str = "grok-4", system_prompt: str | None = None):
         from openai import OpenAI
 
         self.client = OpenAI(
@@ -236,8 +236,10 @@ class GeminiProvider(Provider):
 def get_provider(name: str) -> Provider:
     """Get a provider by name or shortcut."""
     aliases = {
-        "claude-sonnet": "claude-sonnet-4-20250514",
+        "claude-sonnet": "claude-sonnet-4-6",
+        "claude-opus": "claude-opus-4-6",
         "claude-haiku": "claude-haiku-4-5-20251001",
+        "grok-fast": "grok-4.1-fast",
         "gemini-flash": "gemini-2.5-flash",
         "gemini-pro": "gemini-2.5-pro",
     }

@@ -4,6 +4,8 @@
 # (input_per_mtok, output_per_mtok, cache_read_per_mtok, cache_write_per_mtok)
 PRICING: dict[str, tuple[float, float, float, float]] = {
     # Anthropic
+    "claude-sonnet-4-6":             (3.00,  15.00, 0.30, 3.75),
+    "claude-opus-4-6":               (15.00, 75.00, 1.50, 18.75),
     "claude-sonnet-4-20250514":      (3.00,  15.00, 0.30, 3.75),
     "claude-opus-4-20250514":        (15.00, 75.00, 1.50, 18.75),
     "claude-haiku-4-5-20251001":     (0.80,  4.00,  0.08, 1.00),
@@ -17,6 +19,8 @@ PRICING: dict[str, tuple[float, float, float, float]] = {
     "o1-preview":                    (15.00, 60.00, 0.0, 0.0),
 
     # xAI
+    "grok-4":                        (3.00,  15.00, 0.0, 0.0),
+    "grok-4.1-fast":                 (0.20,  0.50,  0.0, 0.0),
     "grok-3":                        (3.00,  15.00, 0.0, 0.0),
     "grok-3-mini":                   (0.30,  0.50,  0.0, 0.0),
     "grok-4-fast-reasoning":         (3.00,  15.00, 0.0, 0.0),
