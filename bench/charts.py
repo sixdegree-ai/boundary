@@ -780,7 +780,7 @@ def _build_index(
 
     # SixDegree logo SVG path (from common-ui Logo component)
     logo_svg = (
-        '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="246 270 238.2 294">'
+        '<svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="246 270 238.2 294">'
         '<defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">'
         '<stop offset="0%" stop-color="#1e40af"/><stop offset="100%" stop-color="#60a5fa"/>'
         "</linearGradient></defs>"
@@ -886,7 +886,7 @@ def _build_index(
         .sixdegree-badge {{
             display: flex;
             align-items: center;
-            gap: 0.4rem;
+            gap: 1.8px;
             text-decoration: none;
             transition: opacity 0.2s;
         }}
@@ -896,14 +896,23 @@ def _build_index(
         .sixdegree-badge .sd-by {{
             color: {_TEXT_MUTED};
             font-size: 0.8rem;
+            margin-right: 0.3rem;
+        }}
+        .sixdegree-badge .sd-logo {{
+            display: flex;
+            align-items: center;
+            margin-left: -1.8px;
         }}
         .sixdegree-badge .sd-text {{
-            font-family: Satoshi, system-ui, sans-serif;
+            font-family: Satoshi, system-ui, -apple-system, sans-serif;
             font-weight: 900;
             letter-spacing: -0.05em;
-            font-size: 1.2rem;
+            font-size: 19.8px;
+            white-space: nowrap;
+            margin-top: -3.96px;
+            margin-left: -1.08px;
         }}
-        .sixdegree-badge .sd-six {{ color: {_TEXT}; }}
+        .sixdegree-badge .sd-six {{ color: white; }}
         .sixdegree-badge .sd-degree {{ color: #60a5fa; }}
         .stats {{
             display: flex;
@@ -1022,7 +1031,7 @@ def _build_index(
                 </a>
                 <a href="https://sixdegree.ai" class="sixdegree-badge">
                     <span class="sd-by">by</span>
-                    {logo_svg}
+                    <span class="sd-logo">{logo_svg}</span>
                     <span class="sd-text"><span class="sd-six">six</span><span class="sd-degree">degree</span></span>
                 </a>
             </div>
