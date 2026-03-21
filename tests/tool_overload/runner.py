@@ -303,6 +303,7 @@ def save_results(
     provider_name: str,
     mode: str = "random",
     config: BenchmarkConfig | None = None,
+    run_id: str = "",
 ) -> Path:
     from bench.metadata import collect as collect_metadata
 
@@ -310,17 +311,21 @@ def save_results(
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     safe_name = provider_name.replace("/", "_")
-    filename = RESULTS_DIR / f"{safe_name}_{mode}_{timestamp}.json"
+    filename = RESULTS_DIR / f"{run_id}_{safe_name}_{mode}_{timestamp}.json"
 
     total_cost = sum(r.cost_usd for r in results)
     total_input = sum(r.input_tokens for r in results)
     total_output = sum(r.output_tokens for r in results)
 
+    meta = collect_metadata()
+    meta["run_id"] = run_id
+
     data = {
+        "run_id": run_id,
         "provider": provider_name,
         "mode": mode,
         "config": asdict(config) if config else None,
-        "metadata": collect_metadata(),
+        "metadata": meta,
         "summary": {
             "total_prompts": len(set(r.prompt_id for r in results)),
             "total_calls": len(results),

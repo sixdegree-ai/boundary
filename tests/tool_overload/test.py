@@ -48,9 +48,16 @@ class ToolOverloadPlugin:
 )
 def _run(provider, tool_counts, trials, seed, categories, limit, mode):
     """Run the tool overload benchmark."""
+    import uuid
+
     from bench.providers import get_provider
 
     from .runner import BenchmarkConfig, run_benchmark, save_results
+
+    run_id = uuid.uuid4().hex[:12]
+    n_providers = len(provider)
+    n_modes = len(mode)
+    console.print(f"\n[bold]Run {run_id}[/bold]: {n_providers} provider(s) x {n_modes} mode(s)")
 
     for provider_name in provider:
         p = get_provider(provider_name)
@@ -65,22 +72,30 @@ def _run(provider, tool_counts, trials, seed, categories, limit, mode):
                 mode=m,
             )
             results = run_benchmark(p, config)
-            save_results(results, p.name, mode=m, config=config)
+            save_results(results, p.name, mode=m, config=config, run_id=run_id)
 
 
 @click.command("analyze")
 @click.argument("result_files", nargs=-1, type=click.Path(exists=True, path_type=Path))
+@click.option("--run", "-r", default=None, help="Filter by run ID (prefix match).")
 @click.option("--charts/--no-charts", default=True, help="Generate charts.")
 @click.option("--plotly/--matplotlib", "use_plotly", default=True, help="Chart engine.")
 @click.option("-o", "--output-dir", type=click.Path(path_type=Path), default=None)
-def _analyze(result_files, charts, use_plotly, output_dir):
+def _analyze(result_files, run, charts, use_plotly, output_dir):
     """Analyze results and generate charts."""
     from bench.analysis import load_results
 
     from .analysis import print_summary
 
     if not result_files:
-        result_files = sorted(RESULTS_DIR.glob("*.json"))
+        all_files = sorted(RESULTS_DIR.glob("*.json"))
+        if run:
+            result_files = [f for f in all_files if f.name.startswith(run)]
+            if not result_files:
+                console.print(f"[red]No results matching run ID '{run}'.[/red]")
+                return
+        else:
+            result_files = all_files
         if not result_files:
             console.print("[red]No results found. Run the benchmark first.[/red]")
             return
