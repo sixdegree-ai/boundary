@@ -1,0 +1,43 @@
+[project]
+name = "boundary"
+version = "0.2.0"
+description = "Boundary: open-source agent context testing framework"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.42.0",
+    "openai>=1.50.0",
+    "google-genai>=1.0.0",
+    "pandas>=2.2.0",
+    "plotly>=5.18.0",
+    "kaleido>=0.2.1",
+    "rich>=13.0.0",
+    "click>=8.1.0",
+    "pyyaml>=6.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.8.0",
+]
+
+[project.scripts]
+boundary = "bench.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["bench*", "tests*"]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests_unit"]

@@ -1,0 +1,375 @@
+# Benchmark prompts with expected correct tool calls
+# Categories:
+#   - direct: clear, unambiguous request
+#   - ambiguous: could match multiple tools (tests cross-tool confusion)
+#   - multi_step: requires understanding context to pick the right tool
+
+prompts:
+  # === GitHub (direct) ===
+  - id: gh_001
+    prompt: "List all open issues in the sixdegree-ai/platform repo"
+    expected_tool: github_list_issues
+    category: direct
+
+  - id: gh_002
+    prompt: "Create a bug report issue in sixdegree-ai/platform titled 'API timeout on /completions'"
+    expected_tool: github_create_issue
+    category: direct
+
+  - id: gh_003
+    prompt: "Show me the open pull requests on the platform repo"
+    expected_tool: github_list_pull_requests
+    category: direct
+
+  - id: gh_004
+    prompt: "Get the details of PR #142 in sixdegree-ai/platform"
+    expected_tool: github_get_pull_request
+    category: direct
+
+  - id: gh_005
+    prompt: "Create a pull request from feature/auth to main in sixdegree-ai/platform"
+    expected_tool: github_create_pull_request
+    category: direct
+
+  - id: gh_006
+    prompt: "Search for usages of 'DisclosureTracker' in the platform repo"
+    expected_tool: github_search_code
+    category: direct
+
+  - id: gh_007
+    prompt: "Show me the contents of pkg/handlers/completions_stream.go in the platform repo"
+    expected_tool: github_get_file_content
+    category: direct
+
+  - id: gh_008
+    prompt: "What branches exist in sixdegree-ai/platform?"
+    expected_tool: github_list_branches
+    category: direct
+
+  - id: gh_009
+    prompt: "Show recent commits on the main branch of sixdegree-ai/platform"
+    expected_tool: github_list_commits
+    category: direct
+
+  - id: gh_010
+    prompt: "Add a comment to issue #55 saying 'Fixed in v2.3.1'"
+    expected_tool: github_add_comment
+    category: direct
+
+  - id: gh_011
+    prompt: "Get repository info for sixdegree-ai/platform including star count"
+    expected_tool: github_get_repository
+    category: direct
+
+  # === GitLab (direct) ===
+  - id: gl_001
+    prompt: "List open issues in the backend/api-gateway GitLab project"
+    expected_tool: gitlab_list_issues
+    category: direct
+
+  - id: gl_002
+    prompt: "Create a new issue in the backend/api-gateway GitLab project titled 'Fix CORS headers'"
+    expected_tool: gitlab_create_issue
+    category: direct
+
+  - id: gl_003
+    prompt: "Show merge requests for the backend/api-gateway project on GitLab"
+    expected_tool: gitlab_list_merge_requests
+    category: direct
+
+  - id: gl_004
+    prompt: "Get details of merge request !23 in backend/api-gateway on GitLab"
+    expected_tool: gitlab_get_merge_request
+    category: direct
+
+  - id: gl_005
+    prompt: "Create a merge request from fix/cors to main in the GitLab project backend/api-gateway"
+    expected_tool: gitlab_create_merge_request
+    category: direct
+
+  - id: gl_006
+    prompt: "Show the README.md from the backend/api-gateway GitLab repo"
+    expected_tool: gitlab_get_file_content
+    category: direct
+
+  - id: gl_007
+    prompt: "List branches in the backend/api-gateway GitLab project"
+    expected_tool: gitlab_list_branches
+    category: direct
+
+  - id: gl_008
+    prompt: "Show recent commits in the backend/api-gateway GitLab project"
+    expected_tool: gitlab_list_commits
+    category: direct
+
+  - id: gl_009
+    prompt: "What's the pipeline status for the backend/api-gateway GitLab project?"
+    expected_tool: gitlab_get_pipelines
+    category: direct
+
+  - id: gl_010
+    prompt: "Add a comment on merge request !23 in the GitLab project backend/api-gateway"
+    expected_tool: gitlab_add_note
+    category: direct
+
+  - id: gl_011
+    prompt: "Get project details for backend/api-gateway on GitLab"
+    expected_tool: gitlab_get_project
+    category: direct
+
+  # === Kubernetes (direct) ===
+  - id: k8s_001
+    prompt: "List all namespaces in the production cluster"
+    expected_tool: k8s_list_namespaces
+    category: direct
+
+  - id: k8s_002
+    prompt: "Show deployments in the staging namespace"
+    expected_tool: k8s_list_deployments
+    category: direct
+
+  - id: k8s_003
+    prompt: "List pods in the production namespace"
+    expected_tool: k8s_list_pods
+    category: direct
+
+  - id: k8s_004
+    prompt: "Get details for the pod api-server-7f8b9c in production"
+    expected_tool: k8s_get_pod
+    category: direct
+
+  - id: k8s_005
+    prompt: "Show logs from the api-server pod in production"
+    expected_tool: k8s_get_pod_logs
+    category: direct
+
+  - id: k8s_006
+    prompt: "Scale the api-server deployment to 5 replicas in production"
+    expected_tool: k8s_scale_deployment
+    category: direct
+
+  - id: k8s_007
+    prompt: "Restart the api-server deployment in staging"
+    expected_tool: k8s_restart_deployment
+    category: direct
+
+  - id: k8s_008
+    prompt: "Get cluster health information"
+    expected_tool: k8s_get_cluster_info
+    category: direct
+
+  - id: k8s_009
+    prompt: "List all services in the production namespace"
+    expected_tool: k8s_list_services
+    category: direct
+
+  - id: k8s_010
+    prompt: "Show ingresses in the staging namespace"
+    expected_tool: k8s_list_ingresses
+    category: direct
+
+  # === Slack (direct) ===
+  - id: sl_001
+    prompt: "Send a message to #engineering saying 'Deploy complete'"
+    expected_tool: slack_send_message
+    category: direct
+
+  - id: sl_002
+    prompt: "List all Slack channels"
+    expected_tool: slack_list_channels
+    category: direct
+
+  - id: sl_003
+    prompt: "Show recent messages in the #incidents channel"
+    expected_tool: slack_get_channel_history
+    category: direct
+
+  - id: sl_004
+    prompt: "Create a new Slack channel called #postmortem-2026-03"
+    expected_tool: slack_create_channel
+    category: direct
+
+  - id: sl_005
+    prompt: "Invite the oncall team to the #incident-response channel"
+    expected_tool: slack_invite_to_channel
+    category: direct
+
+  - id: sl_006
+    prompt: "Look up the Slack profile for user U0123ABC"
+    expected_tool: slack_get_user_info
+    category: direct
+
+  # === PagerDuty (direct) ===
+  - id: pd_001
+    prompt: "Create a PagerDuty incident for the API service - database connection pool exhausted"
+    expected_tool: pd_create_incident
+    category: direct
+
+  - id: pd_002
+    prompt: "Acknowledge the PagerDuty incident INC-4521"
+    expected_tool: pd_acknowledge_incident
+    category: direct
+
+  - id: pd_003
+    prompt: "Resolve PagerDuty incident INC-4521"
+    expected_tool: pd_resolve_incident
+    category: direct
+
+  - id: pd_004
+    prompt: "List all triggered PagerDuty incidents"
+    expected_tool: pd_list_incidents
+    category: direct
+
+  - id: pd_005
+    prompt: "Who is currently on-call?"
+    expected_tool: pd_get_oncall
+    category: direct
+
+  - id: pd_006
+    prompt: "Add a note to incident INC-4521 with the root cause analysis"
+    expected_tool: pd_add_note
+    category: direct
+
+  # === Okta (direct) ===
+  - id: ok_001
+    prompt: "List all Okta users in the engineering department"
+    expected_tool: okta_list_users
+    category: direct
+
+  - id: ok_002
+    prompt: "Get the Okta profile for jane.doe@company.com"
+    expected_tool: okta_get_user
+    category: direct
+
+  - id: ok_003
+    prompt: "What groups does jane.doe belong to in Okta?"
+    expected_tool: okta_get_user_groups
+    category: direct
+
+  - id: ok_004
+    prompt: "List all Okta groups that start with 'engineering'"
+    expected_tool: okta_list_groups
+    category: direct
+
+  - id: ok_005
+    prompt: "Show all members of the platform-admins Okta group"
+    expected_tool: okta_get_group_members
+    category: direct
+
+  # === Snyk (direct) ===
+  - id: sn_001
+    prompt: "List all Snyk projects in our organization"
+    expected_tool: snyk_list_projects
+    category: direct
+
+  - id: sn_002
+    prompt: "Show critical vulnerabilities across our Snyk projects"
+    expected_tool: snyk_search_vulnerabilities
+    category: direct
+
+  - id: sn_003
+    prompt: "Run a security scan on the platform project in Snyk"
+    expected_tool: snyk_test_project
+    category: direct
+
+  - id: sn_004
+    prompt: "How do I fix the vulnerabilities in project proj-123?"
+    expected_tool: snyk_get_remediation
+    category: direct
+
+  - id: sn_005
+    prompt: "Scan the nginx:1.25 container image for vulnerabilities"
+    expected_tool: snyk_scan_container_image
+    category: direct
+
+  # === Cross-tool confusion (ambiguous) ===
+  - id: amb_001
+    prompt: "Show me the open issues on the platform repo"
+    expected_tool: github_list_issues
+    category: ambiguous
+    notes: "Could be GitHub or GitLab - LLM must decide based on context"
+
+  - id: amb_002
+    prompt: "Create a merge request from feature/auth to main"
+    expected_tool: gitlab_create_merge_request
+    category: ambiguous
+    notes: "'merge request' is GitLab terminology, but LLM might pick GitHub"
+
+  - id: amb_003
+    prompt: "List open PRs on the backend project"
+    expected_tool: github_list_pull_requests
+    category: ambiguous
+    notes: "'PR' is GitHub terminology but prompt doesn't specify platform"
+
+  - id: amb_004
+    prompt: "Show me the CI/CD pipeline status for the api-gateway project"
+    expected_tool: gitlab_get_pipelines
+    category: ambiguous
+    notes: "CI/CD pipelines are a GitLab concept, but GitHub Actions exist too"
+
+  - id: amb_005
+    prompt: "File a bug about the login timeout"
+    expected_tool: github_create_issue
+    category: ambiguous
+    notes: "No platform specified, could be GitHub or GitLab issue"
+
+  - id: amb_006
+    prompt: "Show me the source code for the auth middleware"
+    expected_tool: github_get_file_content
+    category: ambiguous
+    notes: "Could use GitHub or GitLab file content tool"
+
+  - id: amb_007
+    prompt: "Comment on the code review for the auth fix"
+    expected_tool: github_add_comment
+    category: ambiguous
+    notes: "'code review' could be a PR comment or MR note"
+
+  - id: amb_008
+    prompt: "Who is on call right now and what incidents are open?"
+    expected_tool: pd_get_oncall
+    category: ambiguous
+    notes: "Involves two PagerDuty tools but should pick the most relevant first"
+
+  - id: amb_009
+    prompt: "Notify the team about the deployment"
+    expected_tool: slack_send_message
+    category: ambiguous
+    notes: "Could be Slack message, GitHub comment, etc."
+
+  - id: amb_010
+    prompt: "Check the security posture of our container deployments"
+    expected_tool: snyk_list_container_projects
+    category: ambiguous
+    notes: "Could use Snyk or Kubernetes tools"
+
+  # === Context-dependent (requires understanding which platform) ===
+  - id: ctx_001
+    prompt: "The backend/api-gateway project has a broken pipeline, show me the status"
+    expected_tool: gitlab_get_pipelines
+    category: ambiguous
+    notes: "Path format 'group/project' implies GitLab"
+
+  - id: ctx_002
+    prompt: "Check if there are any pods crashing in production and show me the logs"
+    expected_tool: k8s_list_pods
+    category: ambiguous
+    notes: "Multi-step but should start with listing pods"
+
+  - id: ctx_003
+    prompt: "The sixdegree-ai/platform repo needs a new issue for the Slack integration bug"
+    expected_tool: github_create_issue
+    category: ambiguous
+    notes: "'sixdegree-ai/owner' format implies GitHub"
+
+  - id: ctx_004
+    prompt: "Find out who has access to the production systems"
+    expected_tool: okta_list_groups
+    category: ambiguous
+    notes: "Access management question should route to Okta"
+
+  - id: ctx_005
+    prompt: "There's a new CVE affecting our Node.js dependencies, check our exposure"
+    expected_tool: snyk_search_vulnerabilities
+    category: ambiguous
+    notes: "Vulnerability question should route to Snyk"
