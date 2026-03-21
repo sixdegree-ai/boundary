@@ -81,7 +81,9 @@ def _run(provider, tool_counts, trials, seed, categories, limit, mode):
 @click.option("--charts/--no-charts", default=True, help="Generate charts.")
 @click.option("--plotly/--matplotlib", "use_plotly", default=True, help="Chart engine.")
 @click.option("-o", "--output-dir", type=click.Path(path_type=Path), default=None)
-def _analyze(result_files, run, charts, use_plotly, output_dir):
+@click.option("--serve", "-s", is_flag=True, default=False, help="Start a local web server to view charts.")
+@click.option("--port", default=8765, help="Port for --serve (default: 8765).")
+def _analyze(result_files, run, charts, use_plotly, output_dir, serve, port):
     """Analyze results and generate charts."""
     from bench.analysis import load_results
 
@@ -104,16 +106,51 @@ def _analyze(result_files, run, charts, use_plotly, output_dir):
     df = load_results(list(result_files))
     print_summary(df)
 
+    chart_dir = output_dir or RESULTS_DIR / "charts"
+
     if charts:
         console.print("\n[bold]Generating charts...[/bold]")
-        chart_dir = output_dir or RESULTS_DIR / "charts"
         if use_plotly:
             from bench.charts import generate_charts
         else:
-            # Fallback: just print summary, no matplotlib in the new structure
             console.print("[dim]Matplotlib charts not available in new structure. Use --plotly.[/dim]")
             return
         generate_charts(df, chart_dir)
+
+    if serve:
+        import http.server
+        import os
+        import threading
+        import webbrowser
+
+        os.chdir(chart_dir)
+
+        handler = http.server.SimpleHTTPRequestHandler
+        server = http.server.HTTPServer(("", port), handler)
+
+        # Find the best chart to open
+        for name in ["hero_disclosure", "hero_degradation"]:
+            index = chart_dir / f"{name}.html"
+            if index.exists():
+                break
+        else:
+            htmls = sorted(chart_dir.glob("*.html"))
+            index = htmls[0] if htmls else None
+
+        url = f"http://localhost:{port}"
+        if index:
+            url = f"{url}/{index.name}"
+
+        console.print(f"\n[bold green]Serving charts at {url}[/bold green]")
+        console.print("[dim]Press Ctrl+C to stop[/dim]")
+
+        threading.Timer(0.5, lambda: webbrowser.open(url)).start()
+
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            console.print("\nStopped.")
+            server.shutdown()
 
 
 @click.command("list-tools")
