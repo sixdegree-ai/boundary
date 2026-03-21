@@ -40,8 +40,12 @@ _PROVIDER_PALETTE = [_BLUE, _ORANGE, _CYAN, _PINK, _PURPLE, _GREEN]
 _FONT = "JetBrains Mono, SF Mono, Consolas, monospace"
 
 
-def _save(fig: go.Figure, output_dir: Path, name: str, w: int = 1200, h: int = 700) -> None:
+_generated_charts: list[tuple[str, str]] = []  # (filename, title)
+
+
+def _save(fig: go.Figure, output_dir: Path, name: str, w: int = 1200, h: int = 700, title: str = "") -> None:
     fig.write_html(output_dir / f"{name}.html", include_plotlyjs="cdn")
+    _generated_charts.append((f"{name}.html", title or name))
     try:
         fig.write_image(output_dir / f"{name}.png", width=w, height=h, scale=2)
         console.print(f"  [green]Saved {name}.html + {name}.png[/green]")
@@ -101,8 +105,9 @@ def _yaxis(**overrides) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def generate_charts(df: pd.DataFrame, output_dir: Path) -> None:
+def generate_charts(df: pd.DataFrame, output_dir: Path, run_id: str = "") -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
+    _generated_charts.clear()
 
     df = df.copy()
     df["total_tokens"] = df["input_tokens"] + df["output_tokens"]
@@ -124,6 +129,14 @@ def generate_charts(df: pd.DataFrame, output_dir: Path) -> None:
     if len(modes - {"random"}) > 0:
         _hero_disclosure(df, output_dir)
 
+    # Build summary stats for the index
+    providers = sorted(df["provider"].unique())
+    total_calls = len(df)
+    total_cost = df["cost_usd"].sum() if has_cost else 0
+    modes_list = sorted(df["mode"].unique())
+    tool_range = f"{int(df['num_tools'].min())}-{int(df['num_tools'].max())}"
+
+    _build_index(output_dir, run_id, providers, total_calls, total_cost, modes_list, tool_range)
     console.print(f"\n[bold green]Charts saved to {output_dir}[/bold green]")
 
 
@@ -234,7 +247,7 @@ def _hero_degradation(df: pd.DataFrame, output_dir: Path) -> None:
             ),
         )
     )
-    _save(fig, output_dir, "hero_degradation", w=1100, h=650)
+    _save(fig, output_dir, "hero_degradation", w=1100, h=650, title="Accuracy vs Tool Count")
 
 
 # ---------------------------------------------------------------------------
@@ -279,7 +292,7 @@ def _chart_latency(df: pd.DataFrame, output_dir: Path) -> None:
             yaxis=_yaxis(title=dict(text="LATENCY (ms)", font=dict(size=11, color=_TEXT_MUTED))),
         )
     )
-    _save(fig, output_dir, "latency")
+    _save(fig, output_dir, "latency", title="Response Latency")
 
 
 # ---------------------------------------------------------------------------
@@ -324,7 +337,7 @@ def _chart_tokens(df: pd.DataFrame, output_dir: Path) -> None:
             yaxis=_yaxis(title=dict(text="AVG INPUT TOKENS", font=dict(size=11, color=_TEXT_MUTED))),
         )
     )
-    _save(fig, output_dir, "tokens")
+    _save(fig, output_dir, "tokens", title="Token Usage")
 
 
 # ---------------------------------------------------------------------------
@@ -371,7 +384,7 @@ def _chart_cost(df: pd.DataFrame, output_dir: Path) -> None:
             ),
         )
     )
-    _save(fig, output_dir, "cost")
+    _save(fig, output_dir, "cost", title="Cost per Call")
 
 
 # ---------------------------------------------------------------------------
@@ -443,7 +456,7 @@ def _chart_cost_vs_accuracy(df: pd.DataFrame, output_dir: Path) -> None:
             ),
         )
     )
-    _save(fig, output_dir, "cost_vs_accuracy")
+    _save(fig, output_dir, "cost_vs_accuracy", title="Cost vs Accuracy Tradeoff")
 
 
 # ---------------------------------------------------------------------------
@@ -504,7 +517,7 @@ def _chart_service_heatmap(df: pd.DataFrame, output_dir: Path) -> None:
                 margin=dict(l=100, r=35, t=80, b=60),
             )
         )
-        _save(fig, output_dir, f"heatmap_{safe_name}", w=1000, h=500)
+        _save(fig, output_dir, f"heatmap_{safe_name}", w=1000, h=500, title=f"Service Heatmap: {_short(provider)}")
 
 
 # ---------------------------------------------------------------------------
@@ -593,7 +606,7 @@ def _chart_error_breakdown(df: pd.DataFrame, output_dir: Path) -> None:
             xaxis=dict(title=dict(text="TOOL COUNT", font=dict(size=11, color=_TEXT_MUTED))),
         )
     )
-    _save(fig, output_dir, "error_breakdown", w=1200, h=550)
+    _save(fig, output_dir, "error_breakdown", w=1200, h=550, title="Error Breakdown")
 
 
 # ---------------------------------------------------------------------------
@@ -734,7 +747,186 @@ def _hero_disclosure(df: pd.DataFrame, output_dir: Path) -> None:
             ),
         )
     )
-    _save(fig, output_dir, "hero_disclosure", w=1200, h=800)
+    _save(fig, output_dir, "hero_disclosure", w=1200, h=800, title="Late Disclosure Comparison")
+
+
+# ---------------------------------------------------------------------------
+# Index page
+# ---------------------------------------------------------------------------
+
+
+def _build_index(
+    output_dir: Path,
+    run_id: str,
+    providers: list[str],
+    total_calls: int,
+    total_cost: float,
+    modes: list[str],
+    tool_range: str,
+) -> None:
+    cards = ""
+    for filename, title in _generated_charts:
+        cards += f"""
+        <a href="{filename}" class="card">
+            <div class="card-title">{title}</div>
+            <iframe src="{filename}" loading="lazy"></iframe>
+            <div class="card-overlay">Click to view</div>
+        </a>"""
+
+    provider_tags = " ".join(f'<span class="tag">{_short(p)}</span>' for p in providers)
+    mode_tags = " ".join(f'<span class="tag">{m}</span>' for m in modes)
+    cost_str = f"${total_cost:.4f}" if total_cost > 0 else "n/a"
+    run_label = run_id or "all"
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boundary Results{f" - {run_id}" if run_id else ""}</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
+            background: {_BG};
+            color: {_TEXT};
+            font-family: {_FONT};
+            padding: 2rem;
+        }}
+        .header {{
+            max-width: 1400px;
+            margin: 0 auto 2rem;
+        }}
+        .header h1 {{
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }}
+        .header h1 span {{
+            color: {_TEXT_MUTED};
+            font-weight: normal;
+            font-size: 1rem;
+        }}
+        .stats {{
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }}
+        .stat {{
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }}
+        .stat-label {{
+            color: {_TEXT_MUTED};
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }}
+        .stat-value {{
+            font-size: 1.1rem;
+        }}
+        .tag {{
+            display: inline-block;
+            background: {_SURFACE};
+            border: 1px solid {_BORDER};
+            border-radius: 4px;
+            padding: 0.15rem 0.5rem;
+            font-size: 0.8rem;
+            margin-right: 0.25rem;
+        }}
+        .grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(580px, 1fr));
+            gap: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }}
+        .card {{
+            display: block;
+            background: {_SURFACE};
+            border: 1px solid {_BORDER};
+            border-radius: 8px;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+            transition: border-color 0.2s;
+        }}
+        .card:hover {{
+            border-color: {_BLUE};
+        }}
+        .card-title {{
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-bottom: 1px solid {_BORDER};
+        }}
+        .card iframe {{
+            width: 100%;
+            height: 400px;
+            border: none;
+            pointer-events: none;
+        }}
+        .card-overlay {{
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(transparent, {_SURFACE});
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 0.75rem;
+            font-size: 0.8rem;
+            color: {_TEXT_MUTED};
+            opacity: 0;
+            transition: opacity 0.2s;
+        }}
+        .card:hover .card-overlay {{
+            opacity: 1;
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Boundary <span>tool-overload results</span></h1>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Run</div>
+                <div class="stat-value"><code>{run_label}</code></div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Models</div>
+                <div class="stat-value">{provider_tags}</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Modes</div>
+                <div class="stat-value">{mode_tags}</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Tool range</div>
+                <div class="stat-value">{tool_range}</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Total calls</div>
+                <div class="stat-value">{total_calls:,}</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Total cost</div>
+                <div class="stat-value" style="color: {_GREEN}">{cost_str}</div>
+            </div>
+        </div>
+    </div>
+    <div class="grid">
+        {cards}
+    </div>
+</body>
+</html>"""
+
+    index_path = output_dir / "index.html"
+    index_path.write_text(html)
+    console.print("  [green]Saved index.html[/green]")
 
 
 # ---------------------------------------------------------------------------

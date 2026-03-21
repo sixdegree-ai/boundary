@@ -115,7 +115,7 @@ def _analyze(result_files, run, charts, use_plotly, output_dir, serve, port):
         else:
             console.print("[dim]Matplotlib charts not available in new structure. Use --plotly.[/dim]")
             return
-        generate_charts(df, chart_dir)
+        generate_charts(df, chart_dir, run_id=run or "")
 
     if serve:
         import http.server
@@ -128,18 +128,7 @@ def _analyze(result_files, run, charts, use_plotly, output_dir, serve, port):
         handler = http.server.SimpleHTTPRequestHandler
         server = http.server.HTTPServer(("", port), handler)
 
-        # Find the best chart to open
-        for name in ["hero_disclosure", "hero_degradation"]:
-            index = chart_dir / f"{name}.html"
-            if index.exists():
-                break
-        else:
-            htmls = sorted(chart_dir.glob("*.html"))
-            index = htmls[0] if htmls else None
-
-        url = f"http://localhost:{port}"
-        if index:
-            url = f"{url}/{index.name}"
+        url = f"http://localhost:{port}/index.html"
 
         console.print(f"\n[bold green]Serving charts at {url}[/bold green]")
         console.print("[dim]Press Ctrl+C to stop[/dim]")
