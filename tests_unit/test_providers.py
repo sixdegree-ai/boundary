@@ -48,5 +48,5 @@ def test_get_provider_full_name():
 
 
 def test_get_provider_unknown():
-    with pytest.raises(ValueError, match="Unknown provider"):
+    with pytest.raises(ValueError, match="Unknown model"):
         get_provider("llama-3")

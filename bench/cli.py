@@ -48,32 +48,32 @@ def cli(env_file):
 
 @cli.command("list-providers")
 def list_providers():
-    """List available model providers and shortcuts."""
-    table = Table(title="Available Providers")
-    table.add_column("Shortcut")
-    table.add_column("Model ID")
-    table.add_column("Provider")
+    """List available models and shortcuts."""
+    from bench.pricing import _load_models
 
-    shortcuts = [
-        ("claude-sonnet", "claude-sonnet-4-20250514", "Anthropic"),
-        ("claude-haiku", "claude-haiku-4-5-20251001", "Anthropic"),
-        ("gpt-4o", "gpt-4o", "OpenAI"),
-        ("gpt-4o-mini", "gpt-4o-mini", "OpenAI"),
-        ("grok-3", "grok-3", "xAI"),
-        ("grok-3-mini", "grok-3-mini", "xAI"),
-        ("gemini-flash", "gemini-2.5-flash", "Google"),
-        ("gemini-pro", "gemini-2.5-pro", "Google"),
-    ]
+    # Group by provider for readability
+    by_provider: dict[str, list] = {}
+    for m in _load_models():
+        by_provider.setdefault(m["provider"], []).append(m)
 
-    for shortcut, model_id, provider in shortcuts:
-        table.add_row(shortcut, model_id, provider)
+    for provider, models in by_provider.items():
+        console.print(f"\n  [bold]{provider}[/bold]")
+        for m in models:
+            aliases = m.get("aliases", [])
+            p = m.get("pricing", {})
+            alias_str = f" [dim]({', '.join(aliases)})[/dim]" if aliases else ""
+            console.print(
+                f"    {m['id']}{alias_str}"
+                f"  [green]${p.get('input', 0):.2f}[/green] in"
+                f" / [green]${p.get('output', 0):.2f}[/green] out per MTok"
+            )
 
-    console.print(table)
-    console.print("\n[dim]You can also use full model names directly:[/dim]")
-    console.print("  [cyan]claude-*[/cyan]  -> Anthropic")
-    console.print("  [cyan]gpt-*[/cyan]     -> OpenAI")
-    console.print("  [cyan]grok-*[/cyan]    -> xAI")
-    console.print("  [cyan]gemini-*[/cyan]  -> Google")
+    console.print()
+    console.print(
+        "\n[bold yellow]WARNING:[/bold yellow] Pricing shown is approximate and may be outdated. "
+        "Always verify current pricing at your provider's pricing page before running large benchmarks. "
+        "To update pricing, edit bench/models.yaml."
+    )
 
 
 @cli.command("list-tests")

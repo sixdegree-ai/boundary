@@ -263,32 +263,29 @@ class GeminiProvider(Provider):
         )
 
 
+_PROVIDER_CLASSES = {
+    "anthropic": AnthropicProvider,
+    "openai": OpenAIProvider,
+    "xai": XAIProvider,
+    "gemini": GeminiProvider,
+}
+
+
 def get_provider(name: str) -> Provider:
-    """Get a provider by name or shortcut."""
-    aliases = {
-        "claude-sonnet": "claude-sonnet-4-6",
-        "claude-opus": "claude-opus-4-6",
-        "claude-haiku": "claude-haiku-4-5-20251001",
-        "grok-fast": "grok-4.1-fast",
-        "gemini-flash": "gemini-2.5-flash",
-        "gemini-pro": "gemini-2.5-pro",
-    }
+    """Get a provider by name, alias, or model ID. Resolved from models.yaml."""
+    from .pricing import _load_models
 
-    model = aliases.get(name, name)
+    # Check for provider/ prefix (e.g. "anthropic/claude-sonnet-4-6")
+    if "/" in name:
+        provider_name, model = name.split("/", 1)
+        if provider_name in _PROVIDER_CLASSES:
+            return _PROVIDER_CLASSES[provider_name](model)
 
-    if model.startswith("claude-") or model.startswith("anthropic/"):
-        model = model.removeprefix("anthropic/")
-        return AnthropicProvider(model)
-    elif model.startswith("gpt-") or model.startswith("o1") or model.startswith("openai/"):
-        model = model.removeprefix("openai/")
-        return OpenAIProvider(model)
-    elif model.startswith("grok-") or model.startswith("xai/"):
-        model = model.removeprefix("xai/")
-        return XAIProvider(model)
-    elif model.startswith("gemini-") or model.startswith("google/"):
-        model = model.removeprefix("google/")
-        return GeminiProvider(model)
-    else:
-        raise ValueError(
-            f"Unknown provider for model: {name}. Model name should start with: claude-, gpt-, o1, grok-, or gemini-"
-        )
+    # Resolve alias or exact match from models.yaml
+    for m in _load_models():
+        if name == m["id"] or name in m.get("aliases", []):
+            cls = _PROVIDER_CLASSES.get(m["provider"])
+            if cls:
+                return cls(m["id"])
+
+    raise ValueError(f"Unknown model: '{name}'. Run `boundary list-providers` to see available models.")
