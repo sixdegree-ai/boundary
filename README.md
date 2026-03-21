@@ -93,6 +93,15 @@ uv run boundary tool-overload analyze
 - `-l N` to limit number of prompts
 - `-t` with fewer tool counts (e.g. `-t 5,20,60`)
 - Anthropic prompt caching is enabled automatically
+- Running cost is shown live in the progress bar so you can Ctrl+C if needed
+
+### Rate limits
+
+At larger tool counts (60+), each call sends thousands of input tokens. Make sure your API tier has sufficient tokens-per-minute (TPM) limits. Boundary retries automatically on 429 errors with backoff (5s, 15s, 30s), but sustained rate limiting will slow your run. Tips:
+
+- OpenAI Tier 1 accounts may struggle at 60+ tools with multiple trials. Use `-n 1` or request a TPM increase
+- Anthropic prompt caching helps significantly since tool schemas are cached across calls
+- Start with `-l 10 -n 1` to estimate your rate before committing to a full run
 
 ### Charts
 

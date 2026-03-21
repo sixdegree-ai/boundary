@@ -2,6 +2,7 @@
 
 import json
 import random
+import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -182,6 +183,8 @@ def run_benchmark(
 
     results: list[TrialResult] = []
 
+    run_start = time.monotonic()
+
     console.print("\n[bold]Tool Overload Benchmark[/bold]")
     console.print(f"  Provider: {provider.name}")
     console.print(f"  Mode: {mode}")
@@ -294,8 +297,10 @@ def run_benchmark(
 
             progress.update(task, advance=1, cost=total_cost)
 
-    console.print(f"\n  Total cost: [green]${total_cost:.4f}[/green]")
-    return results
+    duration = time.monotonic() - run_start
+    minutes, seconds = divmod(int(duration), 60)
+    console.print(f"\n  Total cost: [green]${total_cost:.4f}[/green]  Duration: {minutes}m{seconds:02d}s")
+    return results, duration
 
 
 def save_results(
@@ -304,6 +309,7 @@ def save_results(
     mode: str = "random",
     config: BenchmarkConfig | None = None,
     run_id: str = "",
+    duration_seconds: float = 0.0,
 ) -> Path:
     from bench.metadata import collect as collect_metadata
 
@@ -332,6 +338,7 @@ def save_results(
             "total_input_tokens": total_input,
             "total_output_tokens": total_output,
             "total_cost_usd": round(total_cost, 6),
+            "duration_seconds": round(duration_seconds, 1),
         },
         "results": [asdict(r) for r in results],
     }

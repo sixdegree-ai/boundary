@@ -71,8 +71,8 @@ def _run(provider, tool_counts, trials, seed, categories, limit, mode):
                 prompt_limit=limit,
                 mode=m,
             )
-            results = run_benchmark(p, config)
-            save_results(results, p.name, mode=m, config=config, run_id=run_id)
+            results, duration = run_benchmark(p, config)
+            save_results(results, p.name, mode=m, config=config, run_id=run_id, duration_seconds=duration)
 
 
 @click.command("analyze")

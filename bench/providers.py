@@ -1,11 +1,33 @@
 """LLM provider adapters."""
 
+import logging
 import time
 from typing import Any
 
 from .pricing import calc_cost
 from .tools import to_anthropic_schema, to_gemini_schema, to_openai_schema
 from .types import Provider, ProviderResult
+
+log = logging.getLogger(__name__)
+
+MAX_RETRIES = 3
+RETRY_BACKOFF = [5, 15, 30]  # seconds
+
+
+def _retry(fn, retries=MAX_RETRIES):
+    """Retry a function on rate limit or transient errors."""
+    for attempt in range(retries + 1):
+        try:
+            return fn()
+        except Exception as e:
+            err_str = str(e).lower()
+            is_retryable = "rate" in err_str or "429" in err_str or "overloaded" in err_str or "503" in err_str
+            if not is_retryable or attempt == retries:
+                raise
+            wait = RETRY_BACKOFF[min(attempt, len(RETRY_BACKOFF) - 1)]
+            log.warning(f"Rate limited, retrying in {wait}s (attempt {attempt + 1}/{retries})")
+            time.sleep(wait)
+
 
 DEFAULT_SYSTEM_PROMPT = (
     "You are a helpful assistant with access to various tools. "
@@ -42,13 +64,15 @@ class AnthropicProvider(Provider):
             self._cached_schemas = schemas
 
         start = time.monotonic()
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=1024,
-            system=[{"type": "text", "text": self.system_prompt, "cache_control": {"type": "ephemeral"}}],
-            messages=[{"role": "user", "content": prompt}],
-            tools=schemas,
-            tool_choice={"type": "any"},
+        response = _retry(
+            lambda: self.client.messages.create(
+                model=self.model,
+                max_tokens=1024,
+                system=[{"type": "text", "text": self.system_prompt, "cache_control": {"type": "ephemeral"}}],
+                messages=[{"role": "user", "content": prompt}],
+                tools=schemas,
+                tool_choice={"type": "any"},
+            )
         )
         latency = (time.monotonic() - start) * 1000
 
@@ -91,14 +115,16 @@ class OpenAIProvider(Provider):
     def call(self, prompt: str, tools: list[dict[str, Any]]) -> ProviderResult:
         schemas = [to_openai_schema(t) for t in tools]
         start = time.monotonic()
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": self.system_prompt},
-                {"role": "user", "content": prompt},
-            ],
-            tools=schemas,
-            tool_choice="required",
+        response = _retry(
+            lambda: self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": prompt},
+                ],
+                tools=schemas,
+                tool_choice="required",
+            )
         )
         latency = (time.monotonic() - start) * 1000
 
@@ -144,14 +170,16 @@ class XAIProvider(Provider):
     def call(self, prompt: str, tools: list[dict[str, Any]]) -> ProviderResult:
         schemas = [to_openai_schema(t) for t in tools]
         start = time.monotonic()
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": self.system_prompt},
-                {"role": "user", "content": prompt},
-            ],
-            tools=schemas,
-            tool_choice="required",
+        response = _retry(
+            lambda: self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": prompt},
+                ],
+                tools=schemas,
+                tool_choice="required",
+            )
         )
         latency = (time.monotonic() - start) * 1000
 
@@ -196,18 +224,20 @@ class GeminiProvider(Provider):
         gemini_tools = types.Tool(function_declarations=function_declarations)
 
         start = time.monotonic()
-        response = self.client.models.generate_content(
-            model=self.model,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=self.system_prompt,
-                tools=[gemini_tools],
-                tool_config=types.ToolConfig(
-                    function_calling_config=types.FunctionCallingConfig(
-                        mode="ANY",
-                    )
+        response = _retry(
+            lambda: self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=self.system_prompt,
+                    tools=[gemini_tools],
+                    tool_config=types.ToolConfig(
+                        function_calling_config=types.FunctionCallingConfig(
+                            mode="ANY",
+                        )
+                    ),
                 ),
-            ),
+            )
         )
         latency = (time.monotonic() - start) * 1000
 
