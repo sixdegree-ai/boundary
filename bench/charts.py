@@ -778,12 +778,39 @@ def _build_index(
     cost_str = f"${total_cost:.4f}" if total_cost > 0 else "n/a"
     run_label = run_id or "all"
 
+    # SixDegree logo SVG path (from common-ui Logo component)
+    logo_svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="246 270 238.2 294">'
+        '<defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">'
+        '<stop offset="0%" stop-color="#1e40af"/><stop offset="100%" stop-color="#60a5fa"/>'
+        "</linearGradient></defs>"
+        '<g transform="matrix(0.1,0,0,-0.1,-51,1096.903)">'
+        '<path fill="url(#lg)" d="m 3960,8053 c -102,-63 -313,-194 -470,-291 -157,-96 -315,-195 '
+        "-352,-219 l -68,-43 v -697 l 1,-698 257,-159 c 141,-88 386,-240 545,-338 l 288,-179 "
+        "237,147 c 130,81 323,202 427,267 105,66 243,151 308,190 l 119,72 -5,300 c -4,326 -8,352 "
+        "-66,470 -64,128 -189,249 -308,296 -43,17 -84,24 -159,27 -146,5 -194,-14 -534,-216 "
+        "-25,-15 -31,-12 -220,103 -392,238 -466,283 -497,299 -18,9 -33,18 -33,20 0,2 105,68 "
+        "233,146 127,79 277,171 332,205 55,34 114,69 131,78 l 31,16 227,-145 c 125,-79 232,-144 "
+        "237,-144 14,0 259,152 259,160 0,4 -33,28 -72,53 -40,24 -163,100 -273,167 -110,68 "
+        "-237,147 -283,177 -45,29 -88,53 -95,52 -7,0 -95,-52 -197,-116 z M 3594,6998 c 129,-79 "
+        "249,-151 266,-160 17,-10 29,-22 26,-26 -3,-5 -43,-30 -88,-57 -46,-26 -165,-99 -266,-161 "
+        "-100,-63 -185,-114 -187,-114 -3,0 -5,149 -5,330 0,203 4,330 10,330 5,0 115,-64 244,-142 "
+        "z m 1211,-102 c 64,-29 134,-107 158,-174 15,-42 20,-92 24,-256 l 5,-205 -39,-24 c -21,-14 "
+        "-208,-129 -416,-256 l -377,-232 -248,153 c -136,85 -302,188 -369,229 -68,41 -123,77 "
+        "-123,80 0,8 25,24 315,199 121,74 262,160 313,193 52,32 100,56 108,53 7,-3 88,-53 "
+        "179,-111 91,-58 167,-105 169,-105 9,0 261,162 264,170 3,9 -79,59 -240,144 -60,32 "
+        '-108,61 -108,65 0,11 114,71 164,87 69,21 164,17 221,-10 z"/>'
+        "</g></svg>"
+    )
+
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Boundary Results{f" - {run_id}" if run_id else ""}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Satoshi:wght@700;900&display=swap" rel="stylesheet">
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{
@@ -796,20 +823,72 @@ def _build_index(
             max-width: 1400px;
             margin: 0 auto 2rem;
         }}
-        .header h1 {{
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
+        .brand {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
         }}
-        .header h1 span {{
+        .brand-left {{
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }}
+        .brand-left h1 {{
+            font-family: Satoshi, system-ui, sans-serif;
+            font-weight: 900;
+            font-size: 1.6rem;
+            letter-spacing: -0.03em;
+        }}
+        .brand-left h1 .b-text {{ color: {_TEXT}; }}
+        .brand-left .test-name {{
             color: {_TEXT_MUTED};
+            font-family: {_FONT};
             font-weight: normal;
-            font-size: 1rem;
+            font-size: 0.85rem;
+            margin-left: 0.5rem;
         }}
+        .brand-right {{
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }}
+        .brand-right a {{
+            color: {_TEXT_MUTED};
+            text-decoration: none;
+            font-size: 0.8rem;
+            padding: 0.3rem 0.7rem;
+            border: 1px solid {_BORDER};
+            border-radius: 6px;
+            transition: all 0.2s;
+        }}
+        .brand-right a:hover {{
+            color: {_TEXT};
+            border-color: {_BLUE};
+        }}
+        .sixdegree-badge {{
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: {_TEXT_MUTED};
+            font-size: 0.75rem;
+        }}
+        .sixdegree-badge .sd-text {{
+            font-family: Satoshi, system-ui, sans-serif;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            font-size: 0.85rem;
+        }}
+        .sixdegree-badge .sd-six {{ color: {_TEXT}; }}
+        .sixdegree-badge .sd-degree {{ color: #60a5fa; }}
         .stats {{
             display: flex;
             gap: 2rem;
-            margin-top: 1rem;
             flex-wrap: wrap;
+            padding: 1rem 1.25rem;
+            background: {_SURFACE};
+            border: 1px solid {_BORDER};
+            border-radius: 8px;
         }}
         .stat {{
             display: flex;
@@ -818,21 +897,21 @@ def _build_index(
         }}
         .stat-label {{
             color: {_TEXT_MUTED};
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }}
         .stat-value {{
-            font-size: 1.1rem;
+            font-size: 1rem;
         }}
         .tag {{
             display: inline-block;
-            background: {_SURFACE};
+            background: {_BG};
             border: 1px solid {_BORDER};
             border-radius: 4px;
-            padding: 0.15rem 0.5rem;
-            font-size: 0.8rem;
-            margin-right: 0.25rem;
+            padding: 0.1rem 0.4rem;
+            font-size: 0.75rem;
+            margin-right: 0.2rem;
         }}
         .grid {{
             display: grid;
@@ -886,11 +965,41 @@ def _build_index(
         .card:hover .card-overlay {{
             opacity: 1;
         }}
+        .footer {{
+            max-width: 1400px;
+            margin: 2rem auto 0;
+            padding-top: 1.5rem;
+            border-top: 1px solid {_BORDER};
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: {_TEXT_MUTED};
+            font-size: 0.75rem;
+        }}
+        .footer a {{
+            color: {_TEXT_MUTED};
+            text-decoration: none;
+        }}
+        .footer a:hover {{
+            color: {_TEXT};
+        }}
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Boundary <span>tool-overload results</span></h1>
+        <div class="brand">
+            <div class="brand-left">
+                <h1><span class="b-text">Boundary</span></h1>
+                <span class="test-name">tool-overload</span>
+            </div>
+            <div class="brand-right">
+                <a href="https://github.com/sixdegree-ai/boundary">GitHub</a>
+                <div class="sixdegree-badge">
+                    by {logo_svg}
+                    <span class="sd-text"><span class="sd-six">six</span><span class="sd-degree">degree</span></span>
+                </div>
+            </div>
+        </div>
         <div class="stats">
             <div class="stat">
                 <div class="stat-label">Run</div>
@@ -920,6 +1029,10 @@ def _build_index(
     </div>
     <div class="grid">
         {cards}
+    </div>
+    <div class="footer">
+        <span>Generated by <a href="https://github.com/sixdegree-ai/boundary">Boundary</a></span>
+        <a href="https://sixdegree.ai">sixdegree.ai</a>
     </div>
 </body>
 </html>"""
