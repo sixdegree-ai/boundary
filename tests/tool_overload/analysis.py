@@ -1,7 +1,5 @@
 """Tool-overload test analysis and summary output."""
 
-from pathlib import Path
-
 import pandas as pd
 from rich.console import Console
 from rich.table import Table
@@ -39,14 +37,16 @@ def print_summary(df: pd.DataFrame) -> None:
                 row = []
                 if has_modes:
                     row.append(MODE_LABELS.get(mode, mode))
-                row.extend([
-                    provider,
-                    str(num_tools),
-                    f"{acc:.1f}",
-                    f"{cross_svc:.1f}",
-                    f"{latency:.0f}",
-                    f"{tokens:.0f}",
-                ])
+                row.extend(
+                    [
+                        provider,
+                        str(num_tools),
+                        f"{acc:.1f}",
+                        f"{cross_svc:.1f}",
+                        f"{latency:.0f}",
+                        f"{tokens:.0f}",
+                    ]
+                )
                 table.add_row(*row)
 
     console.print(table)

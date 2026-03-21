@@ -365,3 +365,237 @@ tools:
     description: List all IaC projects in an organization
     parameters:
       org_id: { type: string, required: true, description: "Organization ID" }
+
+  # === Datadog Tools ===
+  - name: datadog_list_monitors
+    description: List all Datadog monitors with optional filtering by tags or status
+    parameters:
+      tags: { type: string, required: false, description: "Comma-separated tags to filter by" }
+
+  - name: datadog_get_monitor
+    description: Get details of a specific Datadog monitor including status and alert conditions
+    parameters:
+      monitor_id: { type: string, required: true, description: "Monitor ID" }
+
+  - name: datadog_create_monitor
+    description: Create a new Datadog monitor with a query and alert thresholds
+    parameters:
+      name: { type: string, required: true, description: "Monitor name" }
+      query: { type: string, required: true, description: "Monitor query" }
+      type: { type: string, required: true, description: "Monitor type (metric, service check, event, etc.)" }
+
+  - name: datadog_mute_monitor
+    description: Mute a Datadog monitor to suppress notifications
+    parameters:
+      monitor_id: { type: string, required: true, description: "Monitor ID" }
+      end: { type: string, required: false, description: "Mute end timestamp" }
+
+  - name: datadog_search_events
+    description: Search Datadog events by query string and time range
+    parameters:
+      query: { type: string, required: true, description: "Event search query" }
+      start: { type: string, required: false, description: "Start time" }
+      end: { type: string, required: false, description: "End time" }
+
+  - name: datadog_get_metrics
+    description: Query Datadog metric timeseries data
+    parameters:
+      query: { type: string, required: true, description: "Metrics query" }
+      from_ts: { type: string, required: true, description: "Start timestamp" }
+      to_ts: { type: string, required: true, description: "End timestamp" }
+
+  - name: datadog_list_dashboards
+    description: List all Datadog dashboards
+    parameters: {}
+
+  - name: datadog_get_dashboard
+    description: Get a specific Datadog dashboard by ID
+    parameters:
+      dashboard_id: { type: string, required: true, description: "Dashboard ID" }
+
+  - name: datadog_create_downtime
+    description: Schedule a Datadog downtime window for maintenance
+    parameters:
+      scope: { type: string, required: true, description: "Downtime scope (e.g. host:myhost)" }
+      start: { type: string, required: true, description: "Downtime start timestamp" }
+      end: { type: string, required: false, description: "Downtime end timestamp" }
+      message: { type: string, required: false, description: "Downtime message" }
+
+  - name: datadog_list_hosts
+    description: List all hosts reporting to Datadog with optional filtering
+    parameters:
+      filter: { type: string, required: false, description: "Filter string" }
+
+  - name: datadog_get_slo
+    description: Get details and status of a Datadog Service Level Objective
+    parameters:
+      slo_id: { type: string, required: true, description: "SLO ID" }
+
+  - name: datadog_list_logs
+    description: Search and list Datadog log entries
+    parameters:
+      query: { type: string, required: true, description: "Log search query" }
+      from_ts: { type: string, required: false, description: "Start timestamp" }
+      to_ts: { type: string, required: false, description: "End timestamp" }
+      limit: { type: integer, required: false, description: "Max results" }
+
+  # === Jira Tools ===
+  - name: jira_search_issues
+    description: Search Jira issues using JQL query syntax
+    parameters:
+      jql: { type: string, required: true, description: "JQL query string" }
+      max_results: { type: integer, required: false, description: "Max results to return" }
+
+  - name: jira_get_issue
+    description: Get detailed information about a specific Jira issue
+    parameters:
+      issue_key: { type: string, required: true, description: "Issue key (e.g. PROJ-123)" }
+
+  - name: jira_create_issue
+    description: Create a new Jira issue in a project
+    parameters:
+      project_key: { type: string, required: true, description: "Project key" }
+      summary: { type: string, required: true, description: "Issue summary" }
+      issue_type: { type: string, required: true, description: "Issue type (Bug, Story, Task, etc.)" }
+      description: { type: string, required: false, description: "Issue description" }
+
+  - name: jira_update_issue
+    description: Update fields on an existing Jira issue
+    parameters:
+      issue_key: { type: string, required: true, description: "Issue key" }
+      fields: { type: string, required: true, description: "JSON fields to update" }
+
+  - name: jira_add_comment
+    description: Add a comment to a Jira issue
+    parameters:
+      issue_key: { type: string, required: true, description: "Issue key" }
+      body: { type: string, required: true, description: "Comment body" }
+
+  - name: jira_transition_issue
+    description: Transition a Jira issue to a new status (e.g. In Progress, Done)
+    parameters:
+      issue_key: { type: string, required: true, description: "Issue key" }
+      transition_id: { type: string, required: true, description: "Transition ID" }
+
+  - name: jira_assign_issue
+    description: Assign a Jira issue to a user
+    parameters:
+      issue_key: { type: string, required: true, description: "Issue key" }
+      account_id: { type: string, required: true, description: "Assignee account ID" }
+
+  - name: jira_list_projects
+    description: List all Jira projects accessible to the current user
+    parameters: {}
+
+  - name: jira_get_sprint
+    description: Get details of a Jira sprint including its issues
+    parameters:
+      sprint_id: { type: string, required: true, description: "Sprint ID" }
+
+  - name: jira_list_sprints
+    description: List sprints for a Jira board
+    parameters:
+      board_id: { type: string, required: true, description: "Board ID" }
+      state: { type: string, required: false, description: "Filter by state (active, closed, future)" }
+
+  # === Confluence Tools ===
+  - name: confluence_search
+    description: Search Confluence content using CQL query syntax
+    parameters:
+      cql: { type: string, required: true, description: "CQL query string" }
+      limit: { type: integer, required: false, description: "Max results" }
+
+  - name: confluence_get_page
+    description: Get a Confluence page by ID including its content
+    parameters:
+      page_id: { type: string, required: true, description: "Page ID" }
+
+  - name: confluence_create_page
+    description: Create a new Confluence page in a space
+    parameters:
+      space_key: { type: string, required: true, description: "Space key" }
+      title: { type: string, required: true, description: "Page title" }
+      body: { type: string, required: true, description: "Page body (wiki markup or HTML)" }
+      parent_id: { type: string, required: false, description: "Parent page ID" }
+
+  - name: confluence_update_page
+    description: Update the content of an existing Confluence page
+    parameters:
+      page_id: { type: string, required: true, description: "Page ID" }
+      title: { type: string, required: true, description: "Page title" }
+      body: { type: string, required: true, description: "Updated page body" }
+      version: { type: integer, required: true, description: "Current version number (for conflict detection)" }
+
+  - name: confluence_list_spaces
+    description: List all Confluence spaces
+    parameters: {}
+
+  - name: confluence_get_comments
+    description: Get comments on a Confluence page
+    parameters:
+      page_id: { type: string, required: true, description: "Page ID" }
+
+  - name: confluence_add_comment
+    description: Add a comment to a Confluence page
+    parameters:
+      page_id: { type: string, required: true, description: "Page ID" }
+      body: { type: string, required: true, description: "Comment body" }
+
+  # === AWS Tools ===
+  - name: aws_list_ec2_instances
+    description: List EC2 instances with optional filtering by tags or state
+    parameters:
+      filters: { type: string, required: false, description: "JSON filters array" }
+      region: { type: string, required: false, description: "AWS region" }
+
+  - name: aws_get_ec2_instance
+    description: Get detailed information about a specific EC2 instance
+    parameters:
+      instance_id: { type: string, required: true, description: "EC2 instance ID" }
+      region: { type: string, required: false, description: "AWS region" }
+
+  - name: aws_list_s3_buckets
+    description: List all S3 buckets in the account
+    parameters: {}
+
+  - name: aws_list_s3_objects
+    description: List objects in an S3 bucket with optional prefix filter
+    parameters:
+      bucket: { type: string, required: true, description: "Bucket name" }
+      prefix: { type: string, required: false, description: "Key prefix filter" }
+
+  - name: aws_get_cloudwatch_metrics
+    description: Get CloudWatch metric statistics for a resource
+    parameters:
+      namespace: { type: string, required: true, description: "CloudWatch namespace" }
+      metric_name: { type: string, required: true, description: "Metric name" }
+      dimensions: { type: string, required: true, description: "JSON dimensions" }
+      period: { type: integer, required: false, description: "Period in seconds" }
+
+  - name: aws_list_lambda_functions
+    description: List all Lambda functions in a region
+    parameters:
+      region: { type: string, required: false, description: "AWS region" }
+
+  - name: aws_invoke_lambda
+    description: Invoke a Lambda function synchronously
+    parameters:
+      function_name: { type: string, required: true, description: "Lambda function name or ARN" }
+      payload: { type: string, required: false, description: "JSON payload" }
+
+  - name: aws_list_rds_instances
+    description: List all RDS database instances
+    parameters:
+      region: { type: string, required: false, description: "AWS region" }
+
+  - name: aws_describe_alarms
+    description: List CloudWatch alarms with optional state filter
+    parameters:
+      state: { type: string, required: false, description: "Filter by state (OK, ALARM, INSUFFICIENT_DATA)" }
+      region: { type: string, required: false, description: "AWS region" }
+
+  - name: aws_get_secret
+    description: Retrieve a secret value from AWS Secrets Manager
+    parameters:
+      secret_id: { type: string, required: true, description: "Secret name or ARN" }
+      region: { type: string, required: false, description: "AWS region" }

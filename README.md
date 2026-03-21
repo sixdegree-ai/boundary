@@ -53,7 +53,7 @@ uv run boundary list-providers
 
 ## Tool Overload test
 
-69 real tool definitions from production agent systems (GitHub, GitLab, Kubernetes, Slack, PagerDuty, Okta, Snyk). Tests how well LLMs pick the correct tool when the available toolset ranges from 5 to 60+.
+99 tool definitions from production agent systems across 11 services (GitHub, GitLab, Jira, Confluence, Kubernetes, AWS, Datadog, Slack, PagerDuty, Okta, Snyk). Tests how well LLMs pick the correct tool when the available toolset ranges from 5 to 99.
 
 ### What it measures
 
@@ -69,7 +69,7 @@ The test can compare tool selection accuracy across different disclosure strateg
 | Mode | Flag | Description |
 |------|------|-------------|
 | `random` | `-m random` | Random subset of N tools (default) |
-| `all` | `-m all` | All 60 tools every time |
+| `all` | `-m all` | All 99 tools every time |
 | `disclosed` | `-m disclosed` | Only tools from the target service (5-11 tools) |
 | `noisy` | `-m noisy` | Target service + one random other service (11-22 tools) |
 
@@ -152,8 +152,8 @@ boundary/
       tools.py              # Tool definition loader
       prompts.py            # Prompt loader
       data/
-        definitions.yaml    # 60 tool definitions across 7 services
-        benchmark.yaml      # 69 prompts (54 direct + 15 ambiguous)
+        definitions.yaml    # 99 tool definitions across 11 services
+        benchmark.yaml      # 113 prompts (90 direct + 23 ambiguous)
   results/                  # Output (gitignored)
     tool_overload/
       *.json

@@ -105,6 +105,7 @@ class OpenAIProvider(Provider):
             tc = response.choices[0].message.tool_calls[0]
             tool_name = tc.function.name
             import json
+
             tool_args = json.loads(tc.function.arguments)
 
         return ProviderResult(
@@ -153,6 +154,7 @@ class XAIProvider(Provider):
             tc = response.choices[0].message.tool_calls[0]
             tool_name = tc.function.name
             import json
+
             tool_args = json.loads(tc.function.arguments)
 
         return ProviderResult(
@@ -244,6 +246,5 @@ def get_provider(name: str) -> Provider:
         return GeminiProvider(model)
     else:
         raise ValueError(
-            f"Unknown provider for model: {name}. "
-            f"Model name should start with: claude-, gpt-, o1, grok-, or gemini-"
+            f"Unknown provider for model: {name}. Model name should start with: claude-, gpt-, o1, grok-, or gemini-"
         )

@@ -21,9 +21,7 @@ def discover_tests() -> dict[str, object]:
     for test_dir in sorted(TESTS_DIR.iterdir()):
         test_module = test_dir / "test.py"
         if test_dir.is_dir() and test_module.exists():
-            spec = importlib.util.spec_from_file_location(
-                f"tests.{test_dir.name}.test", test_module
-            )
+            spec = importlib.util.spec_from_file_location(f"tests.{test_dir.name}.test", test_module)
             mod = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)
             if hasattr(mod, "plugin"):
@@ -34,7 +32,8 @@ def discover_tests() -> dict[str, object]:
 
 @click.group()
 @click.option(
-    "--env-file", "-e",
+    "--env-file",
+    "-e",
     type=click.Path(exists=True, path_type=Path),
     default=None,
     help="Path to .env file (default: .env in current directory)",

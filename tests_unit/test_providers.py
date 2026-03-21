@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from bench.providers import get_provider, AnthropicProvider, OpenAIProvider, XAIProvider, GeminiProvider
+from bench.providers import AnthropicProvider, GeminiProvider, OpenAIProvider, XAIProvider, get_provider
 
 has_anthropic_key = bool(os.environ.get("ANTHROPIC_API_KEY"))
 has_openai_key = bool(os.environ.get("OPENAI_API_KEY"))

@@ -373,3 +373,236 @@ prompts:
     expected_tool: snyk_search_vulnerabilities
     category: ambiguous
     notes: "Vulnerability question should route to Snyk"
+
+  # === Datadog (direct) ===
+  - id: dd_001
+    prompt: "List all Datadog monitors tagged with service:api-server"
+    expected_tool: datadog_list_monitors
+    category: direct
+
+  - id: dd_002
+    prompt: "Get details for Datadog monitor ID 12345678"
+    expected_tool: datadog_get_monitor
+    category: direct
+
+  - id: dd_003
+    prompt: "Create a Datadog monitor that alerts when CPU exceeds 90% on the api-server host"
+    expected_tool: datadog_create_monitor
+    category: direct
+
+  - id: dd_004
+    prompt: "Mute the noisy deployment monitor in Datadog for 2 hours"
+    expected_tool: datadog_mute_monitor
+    category: direct
+
+  - id: dd_005
+    prompt: "Search Datadog events for deployment events in the last 24 hours"
+    expected_tool: datadog_search_events
+    category: direct
+
+  - id: dd_006
+    prompt: "Query Datadog for the average CPU usage metric over the past hour"
+    expected_tool: datadog_get_metrics
+    category: direct
+
+  - id: dd_007
+    prompt: "Show all Datadog dashboards"
+    expected_tool: datadog_list_dashboards
+    category: direct
+
+  - id: dd_008
+    prompt: "Schedule a Datadog downtime for host:db-primary from 2am to 4am"
+    expected_tool: datadog_create_downtime
+    category: direct
+
+  - id: dd_009
+    prompt: "List all hosts reporting to Datadog"
+    expected_tool: datadog_list_hosts
+    category: direct
+
+  - id: dd_010
+    prompt: "Check the status of the API latency SLO in Datadog"
+    expected_tool: datadog_get_slo
+    category: direct
+
+  - id: dd_011
+    prompt: "Search Datadog logs for errors containing 'connection refused' in the last hour"
+    expected_tool: datadog_list_logs
+    category: direct
+
+  # === Jira (direct) ===
+  - id: jr_001
+    prompt: "Search Jira for all open bugs assigned to me in the PLATFORM project"
+    expected_tool: jira_search_issues
+    category: direct
+
+  - id: jr_002
+    prompt: "Get the details of Jira ticket PLATFORM-456"
+    expected_tool: jira_get_issue
+    category: direct
+
+  - id: jr_003
+    prompt: "Create a new bug in the PLATFORM Jira project titled 'API returns 500 on auth endpoint'"
+    expected_tool: jira_create_issue
+    category: direct
+
+  - id: jr_004
+    prompt: "Update the priority of PLATFORM-456 to Critical in Jira"
+    expected_tool: jira_update_issue
+    category: direct
+
+  - id: jr_005
+    prompt: "Add a comment to PLATFORM-456 saying the fix is in PR #789"
+    expected_tool: jira_add_comment
+    category: direct
+
+  - id: jr_006
+    prompt: "Move PLATFORM-456 to In Progress in Jira"
+    expected_tool: jira_transition_issue
+    category: direct
+
+  - id: jr_007
+    prompt: "Assign PLATFORM-456 to Craig in Jira"
+    expected_tool: jira_assign_issue
+    category: direct
+
+  - id: jr_008
+    prompt: "List all Jira projects I have access to"
+    expected_tool: jira_list_projects
+    category: direct
+
+  - id: jr_009
+    prompt: "Show the current sprint for the PLATFORM board in Jira"
+    expected_tool: jira_list_sprints
+    category: direct
+
+  # === Confluence (direct) ===
+  - id: cf_001
+    prompt: "Search Confluence for pages about the authentication architecture"
+    expected_tool: confluence_search
+    category: direct
+
+  - id: cf_002
+    prompt: "Get the content of Confluence page 123456"
+    expected_tool: confluence_get_page
+    category: direct
+
+  - id: cf_003
+    prompt: "Create a new Confluence page in the ENG space titled 'Postmortem 2026-03-21'"
+    expected_tool: confluence_create_page
+    category: direct
+
+  - id: cf_004
+    prompt: "Update the runbook page in Confluence with the new deployment steps"
+    expected_tool: confluence_update_page
+    category: direct
+
+  - id: cf_005
+    prompt: "List all Confluence spaces"
+    expected_tool: confluence_list_spaces
+    category: direct
+
+  - id: cf_006
+    prompt: "Show comments on the architecture decision record page in Confluence"
+    expected_tool: confluence_get_comments
+    category: direct
+
+  # === AWS (direct) ===
+  - id: aws_001
+    prompt: "List all running EC2 instances in us-east-1"
+    expected_tool: aws_list_ec2_instances
+    category: direct
+
+  - id: aws_002
+    prompt: "Get details for EC2 instance i-0abc123def456"
+    expected_tool: aws_get_ec2_instance
+    category: direct
+
+  - id: aws_003
+    prompt: "List all S3 buckets in our account"
+    expected_tool: aws_list_s3_buckets
+    category: direct
+
+  - id: aws_004
+    prompt: "List objects in the data-pipeline-artifacts S3 bucket under the exports/ prefix"
+    expected_tool: aws_list_s3_objects
+    category: direct
+
+  - id: aws_005
+    prompt: "Get the CPU utilization CloudWatch metric for instance i-0abc123"
+    expected_tool: aws_get_cloudwatch_metrics
+    category: direct
+
+  - id: aws_006
+    prompt: "List all Lambda functions in us-west-2"
+    expected_tool: aws_list_lambda_functions
+    category: direct
+
+  - id: aws_007
+    prompt: "Invoke the data-transform Lambda function with the nightly batch payload"
+    expected_tool: aws_invoke_lambda
+    category: direct
+
+  - id: aws_008
+    prompt: "List all RDS database instances"
+    expected_tool: aws_list_rds_instances
+    category: direct
+
+  - id: aws_009
+    prompt: "Show all CloudWatch alarms that are currently in ALARM state"
+    expected_tool: aws_describe_alarms
+    category: direct
+
+  - id: aws_010
+    prompt: "Retrieve the database password from AWS Secrets Manager"
+    expected_tool: aws_get_secret
+    category: direct
+
+  # === Cross-tool confusion - new services (ambiguous) ===
+  - id: amb_011
+    prompt: "Check the monitoring alerts for the API server"
+    expected_tool: datadog_list_monitors
+    category: ambiguous
+    notes: "Could be Datadog or PagerDuty or CloudWatch"
+
+  - id: amb_012
+    prompt: "File a ticket about the broken deployment pipeline"
+    expected_tool: jira_create_issue
+    category: ambiguous
+    notes: "Could be Jira, GitHub issue, or GitLab issue"
+
+  - id: amb_013
+    prompt: "Find the documentation about our auth system"
+    expected_tool: confluence_search
+    category: ambiguous
+    notes: "Could be Confluence or GitHub code search"
+
+  - id: amb_014
+    prompt: "Check the logs for errors in the last hour"
+    expected_tool: datadog_list_logs
+    category: ambiguous
+    notes: "Could be Datadog logs or Kubernetes pod logs"
+
+  - id: amb_015
+    prompt: "Show me the status of our cloud infrastructure"
+    expected_tool: aws_list_ec2_instances
+    category: ambiguous
+    notes: "Could be AWS, Kubernetes, or Datadog"
+
+  - id: amb_016
+    prompt: "Add a note about the root cause to the incident"
+    expected_tool: pd_add_note
+    category: ambiguous
+    notes: "Could be PagerDuty note, Jira comment, or GitHub comment"
+
+  - id: amb_017
+    prompt: "What serverless functions do we have running?"
+    expected_tool: aws_list_lambda_functions
+    category: ambiguous
+    notes: "Could be Lambda or could interpret as Kubernetes workloads"
+
+  - id: amb_018
+    prompt: "Show me the database metrics for the last 24 hours"
+    expected_tool: datadog_get_metrics
+    category: ambiguous
+    notes: "Could be Datadog metrics or CloudWatch metrics"

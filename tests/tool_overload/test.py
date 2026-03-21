@@ -30,6 +30,7 @@ class ToolOverloadPlugin:
 
 # --- Commands ---
 
+
 @click.command("run")
 @click.option("-p", "--provider", multiple=True, default=["claude-sonnet"], help="Provider(s) to benchmark.")
 @click.option("-t", "--tool-counts", default="5,10,20,40,60", help="Comma-separated tool counts (random mode only).")
@@ -38,14 +39,17 @@ class ToolOverloadPlugin:
 @click.option("-c", "--categories", default="direct,ambiguous", help="Comma-separated prompt categories.")
 @click.option("-l", "--limit", default=None, type=int, help="Limit number of prompts.")
 @click.option(
-    "-m", "--mode",
+    "-m",
+    "--mode",
     type=click.Choice(["random", "all", "disclosed", "noisy"], case_sensitive=False),
-    multiple=True, default=["random"],
+    multiple=True,
+    default=["random"],
     help="Disclosure mode(s). Specify multiple for comparison.",
 )
 def _run(provider, tool_counts, trials, seed, categories, limit, mode):
     """Run the tool overload benchmark."""
     from bench.providers import get_provider
+
     from .runner import BenchmarkConfig, run_benchmark, save_results
 
     for provider_name in provider:
@@ -72,6 +76,7 @@ def _run(provider, tool_counts, trials, seed, categories, limit, mode):
 def _analyze(result_files, charts, use_plotly, output_dir):
     """Analyze results and generate charts."""
     from bench.analysis import load_results
+
     from .analysis import print_summary
 
     if not result_files:

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, MofNCompleteColumn
+from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn
 
 from bench.types import Provider
 
@@ -181,7 +181,7 @@ def run_benchmark(
 
     results: list[TrialResult] = []
 
-    console.print(f"\n[bold]Tool Overload Benchmark[/bold]")
+    console.print("\n[bold]Tool Overload Benchmark[/bold]")
     console.print(f"  Provider: {provider.name}")
     console.print(f"  Mode: {mode}")
     console.print(f"  Prompts: {len(prompts)}")
@@ -190,11 +190,7 @@ def run_benchmark(
     console.print(f"  Total API calls: {total_runs}\n")
 
     if mode in ("all", "disclosed", "noisy"):
-        all_runs = [
-            (0, prompt_data, trial)
-            for prompt_data in prompts
-            for trial in range(config.trials_per_combo)
-        ]
+        all_runs = [(0, prompt_data, trial) for prompt_data in prompts for trial in range(config.trials_per_combo)]
     else:
         all_runs = [
             (num_tools, prompt_data, trial)
@@ -233,15 +229,13 @@ def run_benchmark(
         for num_tools, prompt_data, trial in all_runs:
             trial_rng = random.Random(run_seeds[(num_tools, prompt_data["id"], trial)])
 
-            tool_subset = _select_tools_for_run(
-                mode, all_tools, prompt_data["expected_tool"], num_tools, trial_rng
-            )
+            tool_subset = _select_tools_for_run(mode, all_tools, prompt_data["expected_tool"], num_tools, trial_rng)
             actual_num_tools = len(tool_subset)
 
             desc_tools = actual_num_tools if mode != "random" else num_tools
             progress.update(
                 task,
-                description=f"[{mode}:{desc_tools} tools] {prompt_data['id']} t{trial+1}",
+                description=f"[{mode}:{desc_tools} tools] {prompt_data['id']} t{trial + 1}",
             )
 
             expected_service = _get_service_from_tool(prompt_data["expected_tool"])
