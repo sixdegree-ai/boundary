@@ -162,9 +162,11 @@ def run_benchmark(
     all_tools = load_all_tools()
     prompts = load_prompts()
     prompts = [p for p in prompts if p["category"] in config.categories]
-    if config.prompt_limit:
-        prompts = prompts[: config.prompt_limit]
     rng = random.Random(config.seed)
+    if config.prompt_limit and config.prompt_limit < len(prompts):
+        # Sample evenly across services instead of slicing from the top
+        rng.shuffle(prompts)
+        prompts = prompts[: config.prompt_limit]
 
     total_tools = len(all_tools)
     mode = config.mode
