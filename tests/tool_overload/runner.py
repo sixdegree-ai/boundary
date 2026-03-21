@@ -298,23 +298,41 @@ def run_benchmark(
     return results
 
 
-def save_results(results: list[TrialResult], provider_name: str, mode: str = "random") -> Path:
+def save_results(
+    results: list[TrialResult],
+    provider_name: str,
+    mode: str = "random",
+    config: BenchmarkConfig | None = None,
+) -> Path:
+    from bench.metadata import collect as collect_metadata
+
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     safe_name = provider_name.replace("/", "_")
     filename = RESULTS_DIR / f"{safe_name}_{mode}_{timestamp}.json"
 
+    total_cost = sum(r.cost_usd for r in results)
+    total_input = sum(r.input_tokens for r in results)
+    total_output = sum(r.output_tokens for r in results)
+
     data = {
         "provider": provider_name,
         "mode": mode,
-        "timestamp": timestamp,
-        "total_prompts": len(set(r.prompt_id for r in results)),
+        "config": asdict(config) if config else None,
+        "metadata": collect_metadata(),
+        "summary": {
+            "total_prompts": len(set(r.prompt_id for r in results)),
+            "total_calls": len(results),
+            "total_input_tokens": total_input,
+            "total_output_tokens": total_output,
+            "total_cost_usd": round(total_cost, 6),
+        },
         "results": [asdict(r) for r in results],
     }
 
     with open(filename, "w") as f:
         json.dump(data, f, indent=2)
 
-    console.print(f"\n[green]Results saved to {filename}[/green]")
+    console.print(f"[green]Results saved to {filename}[/green]")
     return filename

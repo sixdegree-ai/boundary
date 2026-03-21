@@ -65,7 +65,7 @@ def _run(provider, tool_counts, trials, seed, categories, limit, mode):
                 mode=m,
             )
             results = run_benchmark(p, config)
-            save_results(results, p.name, mode=m)
+            save_results(results, p.name, mode=m, config=config)
 
 
 @click.command("analyze")
