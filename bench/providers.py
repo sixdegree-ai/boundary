@@ -3,6 +3,7 @@
 import time
 from typing import Any
 
+from .pricing import calc_cost
 from .tools import to_anthropic_schema, to_gemini_schema, to_openai_schema
 from .types import Provider, ProviderResult
 
@@ -60,6 +61,7 @@ class AnthropicProvider(Provider):
                 break
 
         input_tokens = response.usage.input_tokens
+        output_tokens = response.usage.output_tokens
         cache_read = getattr(response.usage, "cache_read_input_tokens", 0) or 0
         cache_creation = getattr(response.usage, "cache_creation_input_tokens", 0) or 0
 
@@ -68,7 +70,8 @@ class AnthropicProvider(Provider):
             tool_args=tool_args,
             latency_ms=latency,
             input_tokens=input_tokens,
-            output_tokens=response.usage.output_tokens,
+            output_tokens=output_tokens,
+            cost_usd=calc_cost(self.model, input_tokens, output_tokens, cache_read, cache_creation),
             raw_response={"cache_read": cache_read, "cache_creation": cache_creation},
         )
 
@@ -108,12 +111,16 @@ class OpenAIProvider(Provider):
 
             tool_args = json.loads(tc.function.arguments)
 
+        input_tokens = response.usage.prompt_tokens
+        output_tokens = response.usage.completion_tokens
+
         return ProviderResult(
             tool_name=tool_name,
             tool_args=tool_args,
             latency_ms=latency,
-            input_tokens=response.usage.prompt_tokens,
-            output_tokens=response.usage.completion_tokens,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost_usd=calc_cost(self.model, input_tokens, output_tokens),
         )
 
 
@@ -157,12 +164,16 @@ class XAIProvider(Provider):
 
             tool_args = json.loads(tc.function.arguments)
 
+        input_tokens = response.usage.prompt_tokens
+        output_tokens = response.usage.completion_tokens
+
         return ProviderResult(
             tool_name=tool_name,
             tool_args=tool_args,
             latency_ms=latency,
-            input_tokens=response.usage.prompt_tokens,
-            output_tokens=response.usage.completion_tokens,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost_usd=calc_cost(self.model, input_tokens, output_tokens),
         )
 
 
@@ -218,6 +229,7 @@ class GeminiProvider(Provider):
             latency_ms=latency,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            cost_usd=calc_cost(self.model, input_tokens, output_tokens),
         )
 
 

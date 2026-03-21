@@ -37,6 +37,7 @@ class TrialResult:
     latency_ms: float
     input_tokens: int
     output_tokens: int
+    cost_usd: float = 0.0
     mode: str = "random"
 
 
@@ -217,14 +218,17 @@ def run_benchmark(
         for num_tools, prompt_data, trial in all_runs
     }
 
+    total_cost = 0.0
+
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
         MofNCompleteColumn(),
+        TextColumn("[green]${task.fields[cost]:.4f}[/green]"),
         console=console,
     ) as progress:
-        task = progress.add_task("Running benchmark", total=total_runs)
+        task = progress.add_task("Running benchmark", total=total_runs, cost=0.0)
 
         for num_tools, prompt_data, trial in all_runs:
             trial_rng = random.Random(run_seeds[(num_tools, prompt_data["id"], trial)])
@@ -245,6 +249,7 @@ def run_benchmark(
                 actual = result.tool_name
                 correct = actual == prompt_data["expected_tool"]
                 cross_svc = _is_cross_service_error(actual, prompt_data["expected_tool"], all_tools)
+                total_cost += result.cost_usd
 
                 results.append(
                     TrialResult(
@@ -261,6 +266,7 @@ def run_benchmark(
                         latency_ms=result.latency_ms,
                         input_tokens=result.input_tokens,
                         output_tokens=result.output_tokens,
+                        cost_usd=result.cost_usd,
                         mode=mode,
                     )
                 )
@@ -281,12 +287,14 @@ def run_benchmark(
                         latency_ms=0,
                         input_tokens=0,
                         output_tokens=0,
+                        cost_usd=0.0,
                         mode=mode,
                     )
                 )
 
-            progress.advance(task)
+            progress.update(task, advance=1, cost=total_cost)
 
+    console.print(f"\n  Total cost: [green]${total_cost:.4f}[/green]")
     return results
 
 

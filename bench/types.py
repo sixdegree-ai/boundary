@@ -16,6 +16,7 @@ class ProviderResult:
         latency_ms: float,
         input_tokens: int,
         output_tokens: int,
+        cost_usd: float = 0.0,
         raw_response: Any = None,
     ):
         self.tool_name = tool_name
@@ -23,6 +24,7 @@ class ProviderResult:
         self.latency_ms = latency_ms
         self.input_tokens = input_tokens
         self.output_tokens = output_tokens
+        self.cost_usd = cost_usd
         self.raw_response = raw_response
 
 
