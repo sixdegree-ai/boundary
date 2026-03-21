@@ -49,19 +49,80 @@ def _save(fig: go.Figure, output_dir: Path, name: str, w: int = 1200, h: int = 7
         console.print(f"  [green]Saved {name}.html[/green] [dim](PNG: run `plotly_get_chrome`)[/dim]")
 
 
+def _base_layout(**overrides) -> dict:
+    layout = dict(
+        font=dict(family=_FONT, size=12, color=_TEXT),
+        plot_bgcolor=_SURFACE,
+        paper_bgcolor=_BG,
+        margin=dict(l=65, r=35, t=100, b=80),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.17,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=12, color=_TEXT),
+            bgcolor="rgba(0,0,0,0)",
+        ),
+        hoverlabel=dict(font_size=12, font_family=_FONT, bgcolor=_SURFACE, bordercolor=_BORDER),
+    )
+    layout.update(overrides)
+    return layout
+
+
+def _provider_colors(providers: list[str]) -> dict[str, str]:
+    return {p: _PROVIDER_PALETTE[i % len(_PROVIDER_PALETTE)] for i, p in enumerate(providers)}
+
+
+def _short(provider: str) -> str:
+    return provider.split("/")[-1]
+
+
+def _xaxis(**overrides) -> dict:
+    base = dict(
+        showgrid=False,
+        zeroline=False,
+        tickfont=dict(size=12, color=_TEXT_MUTED),
+        linecolor=_BORDER,
+        linewidth=1,
+    )
+    base.update(overrides)
+    return base
+
+
+def _yaxis(**overrides) -> dict:
+    base = dict(showgrid=True, gridcolor=_GRID, gridwidth=1, zeroline=False, tickfont=dict(size=12, color=_TEXT_MUTED))
+    base.update(overrides)
+    return base
+
+
+# ---------------------------------------------------------------------------
+# Chart generation entry point
+# ---------------------------------------------------------------------------
+
+
 def generate_charts(df: pd.DataFrame, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     df = df.copy()
     df["total_tokens"] = df["input_tokens"] + df["output_tokens"]
+    has_cost = "cost_usd" in df.columns and df["cost_usd"].sum() > 0
 
     modes = set(df["mode"].unique())
+    random_df = df[df["mode"] == "random"].copy() if "random" in modes else None
 
-    if "random" in modes:
-        _hero_degradation(df[df["mode"] == "random"].copy(), output_dir)
+    if random_df is not None and len(random_df) > 0:
+        _hero_degradation(random_df, output_dir)
+        _chart_latency(random_df, output_dir)
+        _chart_tokens(random_df, output_dir)
+        if has_cost:
+            _chart_cost(random_df, output_dir)
+            _chart_cost_vs_accuracy(random_df, output_dir)
+        _chart_service_heatmap(random_df, output_dir)
+        _chart_error_breakdown(random_df, output_dir)
 
     if len(modes - {"random"}) > 0:
-        _hero_disclosure(df.copy(), output_dir)
+        _hero_disclosure(df, output_dir)
 
     console.print(f"\n[bold green]Charts saved to {output_dir}[/bold green]")
 
@@ -73,14 +134,13 @@ def generate_charts(df: pd.DataFrame, output_dir: Path) -> None:
 
 def _hero_degradation(df: pd.DataFrame, output_dir: Path) -> None:
     providers = sorted(df["provider"].unique())
-    colors = {p: _PROVIDER_PALETTE[i % len(_PROVIDER_PALETTE)] for i, p in enumerate(providers)}
+    colors = _provider_colors(providers)
 
     acc = df.groupby(["provider", "num_tools"])["correct"].mean().reset_index()
     acc["pct"] = acc["correct"] * 100
 
     fig = go.Figure()
 
-    # Zone bands
     fig.add_hrect(
         y0=95,
         y1=105,
@@ -104,10 +164,8 @@ def _hero_degradation(df: pd.DataFrame, output_dir: Path) -> None:
 
     for provider in providers:
         pdf = acc[acc["provider"] == provider].sort_values("num_tools")
-        short_name = provider.split("/")[-1]
         c = colors[provider]
 
-        # Gradient fill under the line
         fig.add_trace(
             go.Scatter(
                 x=pdf["num_tools"],
@@ -119,13 +177,11 @@ def _hero_degradation(df: pd.DataFrame, output_dir: Path) -> None:
                 hoverinfo="skip",
             )
         )
-
-        # The line itself
         fig.add_trace(
             go.Scatter(
                 x=pdf["num_tools"],
                 y=pdf["pct"],
-                name=short_name,
+                name=_short(provider),
                 mode="lines+markers+text",
                 line=dict(color=c, width=3, shape="spline"),
                 marker=dict(size=12, color=_SURFACE, line=dict(color=c, width=2.5)),
@@ -135,7 +191,6 @@ def _hero_degradation(df: pd.DataFrame, output_dir: Path) -> None:
             )
         )
 
-    # Annotation arrow on worst drop
     if len(providers) > 0 and len(acc) > 1:
         worst = acc.loc[acc.groupby("provider")["pct"].idxmin()]
         worst_row = worst.sort_values("pct").iloc[0]
@@ -158,57 +213,391 @@ def _hero_degradation(df: pd.DataFrame, output_dir: Path) -> None:
         )
 
     fig.update_layout(
-        title=dict(
-            text=(
-                f"<b>How Many Tools Is Too Many?</b>"
-                f"<br><span style='font-size:13px;color:{_TEXT_MUTED}'>"
-                f"Tool-calling accuracy across {len(providers)} model{'s' if len(providers) != 1 else ''} "
-                f"with {int(acc['num_tools'].min())} to {int(acc['num_tools'].max())} tools"
-                f"</span>"
+        **_base_layout(
+            title=dict(
+                text=(
+                    f"<b>How Many Tools Is Too Many?</b>"
+                    f"<br><span style='font-size:13px;color:{_TEXT_MUTED}'>"
+                    f"Tool-calling accuracy across {len(providers)} model{'s' if len(providers) != 1 else ''} "
+                    f"with {int(acc['num_tools'].min())} to {int(acc['num_tools'].max())} tools"
+                    f"</span>"
+                ),
+                font=dict(size=22, color=_TEXT, family=_FONT),
+                x=0.03,
+                xanchor="left",
             ),
-            font=dict(size=22, color=_TEXT, family=_FONT),
-            x=0.03,
-            xanchor="left",
-        ),
-        font=dict(family=_FONT, size=12, color=_TEXT),
-        plot_bgcolor=_SURFACE,
-        paper_bgcolor=_BG,
-        margin=dict(l=65, r=35, t=100, b=80),
-        xaxis=dict(
-            title=dict(text="TOOLS AVAILABLE TO LLM", font=dict(size=11, color=_TEXT_MUTED)),
-            showgrid=False,
-            zeroline=False,
-            tickfont=dict(size=12, color=_TEXT_MUTED),
-            linecolor=_BORDER,
-            linewidth=1,
-        ),
-        yaxis=dict(
-            title=dict(text="ACCURACY", font=dict(size=11, color=_TEXT_MUTED)),
-            range=[0, 108],
-            ticksuffix="%",
-            showgrid=True,
-            gridcolor=_GRID,
-            gridwidth=1,
-            zeroline=False,
-            tickfont=dict(size=12, color=_TEXT_MUTED),
-        ),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=-0.17,
-            xanchor="center",
-            x=0.5,
-            font=dict(size=12, color=_TEXT),
-            bgcolor="rgba(0,0,0,0)",
-        ),
-        hoverlabel=dict(font_size=12, font_family=_FONT, bgcolor=_SURFACE, bordercolor=_BORDER),
+            xaxis=_xaxis(title=dict(text="TOOLS AVAILABLE TO LLM", font=dict(size=11, color=_TEXT_MUTED))),
+            yaxis=_yaxis(
+                title=dict(text="ACCURACY", font=dict(size=11, color=_TEXT_MUTED)),
+                range=[0, 108],
+                ticksuffix="%",
+            ),
+        )
     )
-
     _save(fig, output_dir, "hero_degradation", w=1100, h=650)
 
 
 # ---------------------------------------------------------------------------
-# CHART 2: "The Fix" - late disclosure side-by-side
+# CHART 2: Latency curve
+# ---------------------------------------------------------------------------
+
+
+def _chart_latency(df: pd.DataFrame, output_dir: Path) -> None:
+    providers = sorted(df["provider"].unique())
+    colors = _provider_colors(providers)
+
+    lat = df.groupby(["provider", "num_tools"])["latency_ms"].agg(["mean", "std"]).reset_index()
+
+    fig = go.Figure()
+    for provider in providers:
+        pdf = lat[lat["provider"] == provider].sort_values("num_tools")
+        c = colors[provider]
+
+        fig.add_trace(
+            go.Scatter(
+                x=pdf["num_tools"],
+                y=pdf["mean"],
+                name=_short(provider),
+                mode="lines+markers+text",
+                line=dict(color=c, width=3, shape="spline"),
+                marker=dict(size=10, color=_SURFACE, line=dict(color=c, width=2.5)),
+                text=[f"<b>{v / 1000:.1f}s</b>" for v in pdf["mean"]],
+                textposition="top center",
+                textfont=dict(size=11, color=c, family=_FONT),
+            )
+        )
+
+    fig.update_layout(
+        **_base_layout(
+            title=dict(
+                text="<b>Response Latency vs Toolset Size</b>",
+                font=dict(size=22, color=_TEXT, family=_FONT),
+                x=0.03,
+                xanchor="left",
+            ),
+            xaxis=_xaxis(title=dict(text="TOOLS AVAILABLE TO LLM", font=dict(size=11, color=_TEXT_MUTED))),
+            yaxis=_yaxis(title=dict(text="LATENCY (ms)", font=dict(size=11, color=_TEXT_MUTED))),
+        )
+    )
+    _save(fig, output_dir, "latency")
+
+
+# ---------------------------------------------------------------------------
+# CHART 3: Token usage curve
+# ---------------------------------------------------------------------------
+
+
+def _chart_tokens(df: pd.DataFrame, output_dir: Path) -> None:
+    providers = sorted(df["provider"].unique())
+    colors = _provider_colors(providers)
+
+    tok = df.groupby(["provider", "num_tools"])["input_tokens"].mean().reset_index()
+
+    fig = go.Figure()
+    for provider in providers:
+        pdf = tok[tok["provider"] == provider].sort_values("num_tools")
+        c = colors[provider]
+
+        fig.add_trace(
+            go.Scatter(
+                x=pdf["num_tools"],
+                y=pdf["input_tokens"],
+                name=_short(provider),
+                mode="lines+markers+text",
+                line=dict(color=c, width=3, shape="spline"),
+                marker=dict(size=10, color=_SURFACE, line=dict(color=c, width=2.5)),
+                text=[f"<b>{v:,.0f}</b>" for v in pdf["input_tokens"]],
+                textposition="top center",
+                textfont=dict(size=11, color=c, family=_FONT),
+            )
+        )
+
+    fig.update_layout(
+        **_base_layout(
+            title=dict(
+                text="<b>Input Tokens per Call vs Toolset Size</b>",
+                font=dict(size=22, color=_TEXT, family=_FONT),
+                x=0.03,
+                xanchor="left",
+            ),
+            xaxis=_xaxis(title=dict(text="TOOLS AVAILABLE TO LLM", font=dict(size=11, color=_TEXT_MUTED))),
+            yaxis=_yaxis(title=dict(text="AVG INPUT TOKENS", font=dict(size=11, color=_TEXT_MUTED))),
+        )
+    )
+    _save(fig, output_dir, "tokens")
+
+
+# ---------------------------------------------------------------------------
+# CHART 4: Cost per call
+# ---------------------------------------------------------------------------
+
+
+def _chart_cost(df: pd.DataFrame, output_dir: Path) -> None:
+    providers = sorted(df["provider"].unique())
+    colors = _provider_colors(providers)
+
+    cost = df.groupby(["provider", "num_tools"])["cost_usd"].mean().reset_index()
+
+    fig = go.Figure()
+    for provider in providers:
+        pdf = cost[cost["provider"] == provider].sort_values("num_tools")
+        c = colors[provider]
+
+        fig.add_trace(
+            go.Scatter(
+                x=pdf["num_tools"],
+                y=pdf["cost_usd"],
+                name=_short(provider),
+                mode="lines+markers+text",
+                line=dict(color=c, width=3, shape="spline"),
+                marker=dict(size=10, color=_SURFACE, line=dict(color=c, width=2.5)),
+                text=[f"<b>${v:.4f}</b>" for v in pdf["cost_usd"]],
+                textposition="top center",
+                textfont=dict(size=11, color=c, family=_FONT),
+            )
+        )
+
+    fig.update_layout(
+        **_base_layout(
+            title=dict(
+                text="<b>Cost per Call vs Toolset Size</b>",
+                font=dict(size=22, color=_TEXT, family=_FONT),
+                x=0.03,
+                xanchor="left",
+            ),
+            xaxis=_xaxis(title=dict(text="TOOLS AVAILABLE TO LLM", font=dict(size=11, color=_TEXT_MUTED))),
+            yaxis=_yaxis(
+                title=dict(text="AVG COST PER CALL (USD)", font=dict(size=11, color=_TEXT_MUTED)), tickprefix="$"
+            ),
+        )
+    )
+    _save(fig, output_dir, "cost")
+
+
+# ---------------------------------------------------------------------------
+# CHART 5: Cost vs accuracy tradeoff (scatter)
+# ---------------------------------------------------------------------------
+
+
+def _chart_cost_vs_accuracy(df: pd.DataFrame, output_dir: Path) -> None:
+    providers = sorted(df["provider"].unique())
+    colors = _provider_colors(providers)
+
+    agg = (
+        df.groupby(["provider", "num_tools"])
+        .agg(
+            accuracy=("correct", "mean"),
+            cost=("cost_usd", "mean"),
+        )
+        .reset_index()
+    )
+    agg["accuracy"] *= 100
+
+    fig = go.Figure()
+    for provider in providers:
+        pdf = agg[agg["provider"] == provider].sort_values("num_tools")
+        c = colors[provider]
+
+        fig.add_trace(
+            go.Scatter(
+                x=pdf["cost"],
+                y=pdf["accuracy"],
+                name=_short(provider),
+                mode="markers+text",
+                marker=dict(
+                    size=pdf["num_tools"].values * 0.3 + 8,
+                    color=c,
+                    opacity=0.85,
+                    line=dict(color=_TEXT, width=1),
+                ),
+                text=[f"{int(nt)}" for nt in pdf["num_tools"]],
+                textposition="top center",
+                textfont=dict(size=10, color=c, family=_FONT),
+                hovertemplate=(
+                    "<b>%{text} tools</b><br>Accuracy: %{y:.1f}%<br>Cost: $%{x:.4f}<br><extra>%{fullData.name}</extra>"
+                ),
+            )
+        )
+
+    fig.update_layout(
+        **_base_layout(
+            title=dict(
+                text=(
+                    "<b>Cost vs Accuracy Tradeoff</b>"
+                    f"<br><span style='font-size:13px;color:{_TEXT_MUTED}'>Bubble size = tool count</span>"
+                ),
+                font=dict(size=22, color=_TEXT, family=_FONT),
+                x=0.03,
+                xanchor="left",
+            ),
+            xaxis=_xaxis(
+                title=dict(text="AVG COST PER CALL (USD)", font=dict(size=11, color=_TEXT_MUTED)),
+                tickprefix="$",
+                showgrid=True,
+                gridcolor=_GRID,
+            ),
+            yaxis=_yaxis(
+                title=dict(text="ACCURACY", font=dict(size=11, color=_TEXT_MUTED)),
+                range=[0, 108],
+                ticksuffix="%",
+            ),
+        )
+    )
+    _save(fig, output_dir, "cost_vs_accuracy")
+
+
+# ---------------------------------------------------------------------------
+# CHART 6: Per-service accuracy heatmap
+# ---------------------------------------------------------------------------
+
+
+def _chart_service_heatmap(df: pd.DataFrame, output_dir: Path) -> None:
+    for provider in sorted(df["provider"].unique()):
+        pdf = df[df["provider"] == provider]
+        pivot = (
+            pdf.groupby(["expected_service", "num_tools"])["correct"]
+            .mean()
+            .reset_index()
+            .pivot(index="expected_service", columns="num_tools", values="correct")
+        )
+        pivot = pivot * 100
+
+        fig = go.Figure(
+            go.Heatmap(
+                z=pivot.values,
+                x=[str(c) for c in pivot.columns],
+                y=pivot.index.tolist(),
+                text=[[f"{v:.0f}" for v in row] for row in pivot.values],
+                texttemplate="%{text}%",
+                textfont=dict(size=12, family=_FONT),
+                colorscale=[[0, _RED], [0.5, _ORANGE], [1, _GREEN]],
+                zmin=0,
+                zmax=100,
+                colorbar=dict(
+                    title=dict(text="Accuracy %", font=dict(color=_TEXT_MUTED)),
+                    tickfont=dict(color=_TEXT_MUTED),
+                    ticksuffix="%",
+                ),
+                hovertemplate="Service: %{y}<br>Tools: %{x}<br>Accuracy: %{text}%<extra></extra>",
+            )
+        )
+
+        safe_name = provider.replace("/", "_")
+        fig.update_layout(
+            **_base_layout(
+                title=dict(
+                    text=f"<b>Accuracy by Service</b> - {_short(provider)}",
+                    font=dict(size=20, color=_TEXT, family=_FONT),
+                    x=0.03,
+                    xanchor="left",
+                ),
+                xaxis=dict(
+                    title=dict(text="TOOL COUNT", font=dict(size=11, color=_TEXT_MUTED)),
+                    tickfont=dict(size=12, color=_TEXT_MUTED),
+                    side="bottom",
+                ),
+                yaxis=dict(
+                    title=dict(text="SERVICE", font=dict(size=11, color=_TEXT_MUTED)),
+                    tickfont=dict(size=12, color=_TEXT_MUTED),
+                    autorange="reversed",
+                ),
+                margin=dict(l=100, r=35, t=80, b=60),
+            )
+        )
+        _save(fig, output_dir, f"heatmap_{safe_name}", w=1000, h=500)
+
+
+# ---------------------------------------------------------------------------
+# CHART 7: Error breakdown (wrong tool vs wrong service vs API failure)
+# ---------------------------------------------------------------------------
+
+
+def _chart_error_breakdown(df: pd.DataFrame, output_dir: Path) -> None:
+    providers = sorted(df["provider"].unique())
+
+    rows = []
+    for provider in providers:
+        for num_tools in sorted(df["num_tools"].unique()):
+            subset = df[(df["provider"] == provider) & (df["num_tools"] == num_tools)]
+            total = len(subset)
+            if total == 0:
+                continue
+            correct = subset["correct"].sum()
+            api_errors = (subset["actual_tool"].isna()).sum()
+            cross_svc = subset["cross_service_error"].sum()
+            wrong_same_svc = total - correct - api_errors - cross_svc
+
+            rows.append(
+                {
+                    "provider": provider,
+                    "num_tools": num_tools,
+                    "Correct": correct / total * 100,
+                    "Wrong (same service)": max(0, wrong_same_svc) / total * 100,
+                    "Wrong (cross-service)": cross_svc / total * 100,
+                    "API error": api_errors / total * 100,
+                }
+            )
+
+    if not rows:
+        return
+
+    breakdown = pd.DataFrame(rows)
+    categories = ["Correct", "Wrong (same service)", "Wrong (cross-service)", "API error"]
+    cat_colors = [_GREEN, _ORANGE, _RED, _GRAY]
+
+    fig = make_subplots(
+        rows=1,
+        cols=len(providers),
+        subplot_titles=[f"<b>{_short(p)}</b>" for p in providers],
+        shared_yaxes=True,
+        horizontal_spacing=0.05,
+    )
+
+    for pi, provider in enumerate(providers, 1):
+        pdf = breakdown[breakdown["provider"] == provider].sort_values("num_tools")
+        for ci, (cat, color) in enumerate(zip(categories, cat_colors)):
+            fig.add_trace(
+                go.Bar(
+                    x=[str(t) for t in pdf["num_tools"]],
+                    y=pdf[cat],
+                    name=cat,
+                    marker_color=color,
+                    marker_opacity=0.85,
+                    showlegend=(pi == 1),
+                    legendgroup=cat,
+                ),
+                row=1,
+                col=pi,
+            )
+
+    for i in range(1, len(providers) + 1):
+        fig.update_xaxes(row=1, col=i, showgrid=False, tickfont=dict(size=10, color=_TEXT_MUTED))
+    fig.update_yaxes(row=1, col=1, ticksuffix="%", tickfont=dict(size=10, color=_TEXT_MUTED))
+
+    styled = []
+    for a in fig.layout.annotations:
+        a.update(font=dict(size=14, color=_TEXT, family=_FONT))
+        styled.append(a)
+
+    fig.update_layout(
+        **_base_layout(
+            title=dict(
+                text="<b>Error Breakdown by Model</b>",
+                font=dict(size=22, color=_TEXT, family=_FONT),
+                x=0.03,
+                xanchor="left",
+            ),
+            barmode="stack",
+            annotations=styled,
+            margin=dict(l=65, r=35, t=100, b=80),
+            xaxis=dict(title=dict(text="TOOL COUNT", font=dict(size=11, color=_TEXT_MUTED))),
+        )
+    )
+    _save(fig, output_dir, "error_breakdown", w=1200, h=550)
+
+
+# ---------------------------------------------------------------------------
+# CHART 8: "The Fix" - late disclosure side-by-side
 # ---------------------------------------------------------------------------
 
 
@@ -240,16 +629,16 @@ def _hero_disclosure(df: pd.DataFrame, output_dir: Path) -> None:
     mode_labels = {"all": "All tools", "noisy": "Noisy", "random": "Random", "disclosed": "Disclosed"}
 
     metrics = [
-        ("accuracy", "%", 1, 1, True),
-        ("cross_svc", "%", 1, 2, False),
-        ("avg_input", "tok", 2, 1, False),
-        ("avg_latency", "ms", 2, 2, False),
+        ("accuracy", "%", 1, 1),
+        ("cross_svc", "%", 1, 2),
+        ("avg_input", "tok", 2, 1),
+        ("avg_latency", "ms", 2, 2),
     ]
 
-    for metric, suffix, row, col, higher_is_better in metrics:
+    for metric, suffix, row, col in metrics:
         for mode in modes_present:
             mdf = agg[agg["mode"] == mode].sort_values("provider")
-            short_names = [p.split("/")[-1] for p in mdf["provider"]]
+            short_names = [_short(p) for p in mdf["provider"]]
             vals = mdf[metric].values
             c = MODE_COLORS.get(mode, _GRAY)
 
@@ -276,10 +665,14 @@ def _hero_disclosure(df: pd.DataFrame, output_dir: Path) -> None:
                 col=col,
             )
 
-    # Style all subplots
     for r, c_idx in [(1, 1), (1, 2), (2, 1), (2, 2)]:
         fig.update_xaxes(
-            row=r, col=c_idx, showgrid=False, tickfont=dict(size=10, color=_TEXT_MUTED), linecolor=_BORDER, linewidth=1
+            row=r,
+            col=c_idx,
+            showgrid=False,
+            tickfont=dict(size=10, color=_TEXT_MUTED),
+            linecolor=_BORDER,
+            linewidth=1,
         )
         fig.update_yaxes(
             row=r,
@@ -294,7 +687,6 @@ def _hero_disclosure(df: pd.DataFrame, output_dir: Path) -> None:
     fig.update_yaxes(row=1, col=1, range=[0, 115], ticksuffix="%")
     fig.update_yaxes(row=1, col=2, ticksuffix="%")
 
-    # Headline delta
     subtitle = ""
     if "all" in modes_present and "disclosed" in modes_present:
         all_acc = agg[agg["mode"] == "all"]["accuracy"].mean()
@@ -313,39 +705,35 @@ def _hero_disclosure(df: pd.DataFrame, output_dir: Path) -> None:
             joined = " &nbsp;/&nbsp; ".join(parts)
             subtitle = f"<br><span style='font-size:14px;color:{_TEXT_MUTED}'>Late disclosure: {joined}</span>"
 
-    # Style subplot titles
     styled = []
     for a in fig.layout.annotations:
         a.update(font=dict(size=12, color=_TEXT_MUTED, family=_FONT))
         styled.append(a)
 
     fig.update_layout(
-        title=dict(
-            text=f"<b>Late Tool Disclosure</b>{subtitle}",
-            font=dict(size=22, color=_TEXT, family=_FONT),
-            x=0.03,
-            xanchor="left",
-        ),
-        font=dict(family=_FONT, size=12, color=_TEXT),
-        plot_bgcolor=_SURFACE,
-        paper_bgcolor=_BG,
-        margin=dict(l=60, r=30, t=110, b=60),
-        barmode="group",
-        bargap=0.25,
-        bargroupgap=0.06,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=-0.10,
-            xanchor="center",
-            x=0.5,
-            font=dict(size=12, color=_TEXT),
-            bgcolor="rgba(0,0,0,0)",
-        ),
-        annotations=styled,
-        hoverlabel=dict(font_size=12, font_family=_FONT, bgcolor=_SURFACE, bordercolor=_BORDER),
+        **_base_layout(
+            title=dict(
+                text=f"<b>Late Tool Disclosure</b>{subtitle}",
+                font=dict(size=22, color=_TEXT, family=_FONT),
+                x=0.03,
+                xanchor="left",
+            ),
+            margin=dict(l=60, r=30, t=110, b=60),
+            barmode="group",
+            bargap=0.25,
+            bargroupgap=0.06,
+            annotations=styled,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=-0.10,
+                xanchor="center",
+                x=0.5,
+                font=dict(size=12, color=_TEXT),
+                bgcolor="rgba(0,0,0,0)",
+            ),
+        )
     )
-
     _save(fig, output_dir, "hero_disclosure", w=1200, h=800)
 
 
