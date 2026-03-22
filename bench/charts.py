@@ -136,7 +136,7 @@ def generate_charts(df: pd.DataFrame, output_dir: Path, run_id: str = "") -> Non
     modes_list = sorted(df["mode"].unique())
     tool_range = f"{int(df['num_tools'].min())}-{int(df['num_tools'].max())}"
 
-    _build_index(output_dir, run_id, providers, total_calls, total_cost, modes_list, tool_range)
+    _build_index(output_dir, run_id, providers, total_calls, total_cost, modes_list, tool_range, df)
     console.print(f"\n[bold green]Charts saved to {output_dir}[/bold green]")
 
 
@@ -763,6 +763,7 @@ def _build_index(
     total_cost: float,
     modes: list[str],
     tool_range: str,
+    df: pd.DataFrame | None = None,
 ) -> None:
     cards = ""
     for filename, title in _generated_charts:
@@ -772,6 +773,57 @@ def _build_index(
             <iframe src="{filename}" loading="lazy"></iframe>
             <div class="card-overlay">Click to view</div>
         </a>"""
+
+    # Build raw data table
+    data_table = ""
+    if df is not None and len(df) > 0:
+        has_cost = "cost_usd" in df.columns and df["cost_usd"].sum() > 0
+        grouped = df.groupby(["provider", "num_tools"]).agg(
+            accuracy=("correct", "mean"),
+            cross_svc=("cross_service_error", "mean"),
+            avg_latency=("latency_ms", "mean"),
+            avg_tokens=("input_tokens", "mean"),
+            cost=("cost_usd", "sum") if has_cost else ("correct", "count"),
+            calls=("correct", "count"),
+        ).reset_index()
+
+        rows = ""
+        for _, r in grouped.iterrows():
+            cost_cell = f'${r["cost"]:.4f}' if has_cost else "—"
+            rows += f"""
+            <tr>
+                <td>{_short(r['provider'])}</td>
+                <td>{int(r['num_tools'])}</td>
+                <td>{r['accuracy'] * 100:.1f}%</td>
+                <td>{r['cross_svc'] * 100:.1f}%</td>
+                <td>{r['avg_latency']:.0f}ms</td>
+                <td>{r['avg_tokens']:.0f}</td>
+                <td>{cost_cell}</td>
+                <td>{int(r['calls'])}</td>
+            </tr>"""
+
+        data_table = f"""
+    <div class="data-section">
+        <h2 class="section-title">Raw Data</h2>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Tools</th>
+                        <th>Accuracy</th>
+                        <th>Cross-Svc Error</th>
+                        <th>Avg Latency</th>
+                        <th>Avg Tokens</th>
+                        <th>Cost</th>
+                        <th>Calls</th>
+                    </tr>
+                </thead>
+                <tbody>{rows}
+                </tbody>
+            </table>
+        </div>
+    </div>"""
 
     provider_tags = " ".join(f'<span class="tag">{_short(p)}</span>' for p in providers)
     mode_tags = " ".join(f'<span class="tag">{m}</span>' for m in modes)
@@ -843,8 +895,8 @@ def _build_index(
         }}
         .brand-left {{
             display: flex;
-            align-items: center;
-            gap: 0.75rem;
+            flex-direction: column;
+            gap: 0.2rem;
         }}
         .brand-left h1 {{
             font-family: Satoshi, system-ui, sans-serif;
@@ -858,7 +910,6 @@ def _build_index(
             font-family: {_FONT};
             font-weight: normal;
             font-size: 0.85rem;
-            margin-left: 0.5rem;
         }}
         .brand-right {{
             display: flex;
@@ -868,19 +919,27 @@ def _build_index(
         .brand-right {{
             gap: 1rem;
         }}
-        .gh-link {{
-            color: {_TEXT_MUTED};
-            text-decoration: none;
+        .gh-btn {{
             display: flex;
             align-items: center;
-            transition: color 0.2s;
-        }}
-        .gh-link:hover {{
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: {_SURFACE};
+            border: 1px solid {_BORDER};
+            border-radius: 6px;
             color: {_TEXT};
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: border-color 0.2s, background 0.2s;
         }}
-        .gh-link svg {{
-            width: 22px;
-            height: 22px;
+        .gh-btn:hover {{
+            border-color: #58a6ff;
+            background: {_BG};
+        }}
+        .gh-btn svg {{
+            width: 18px;
+            height: 18px;
             fill: currentColor;
         }}
         .sixdegree-badge {{
@@ -998,6 +1057,43 @@ def _build_index(
         .card:hover .card-overlay {{
             opacity: 1;
         }}
+        .data-section {{
+            max-width: 1400px;
+            margin: 2rem auto;
+            overflow-x: auto;
+        }}
+        .section-title {{
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: {_TEXT};
+        }}
+        .table-wrap {{
+            overflow-x: auto;
+        }}
+        .data-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }}
+        .data-table th {{
+            text-align: left;
+            padding: 0.6rem 0.8rem;
+            border-bottom: 2px solid {_BORDER};
+            color: {_TEXT_MUTED};
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+        }}
+        .data-table td {{
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid {_BORDER};
+            color: {_TEXT};
+        }}
+        .data-table tr:hover {{
+            background: {_SURFACE};
+        }}
         .footer {{
             max-width: 1400px;
             margin: 2rem auto 0;
@@ -1008,6 +1104,49 @@ def _build_index(
             justify-content: space-between;
             color: {_TEXT_MUTED};
             font-size: 0.75rem;
+        }}
+        @media (max-width: 640px) {{
+            body {{
+                padding: 1rem;
+            }}
+            .brand {{
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }}
+            .brand-left h1 {{
+                font-size: 1.3rem;
+            }}
+            .stats {{
+                gap: 1rem;
+            }}
+            .stat-value {{
+                font-size: 0.85rem;
+            }}
+            .grid {{
+                grid-template-columns: 1fr;
+            }}
+            .card iframe {{
+                height: 250px;
+            }}
+            .gh-btn {{
+                font-size: 0.75rem;
+                padding: 0.4rem 0.75rem;
+            }}
+            .gh-btn span {{
+                display: none;
+            }}
+            .footer {{
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
+            }}
+            .data-table {{
+                font-size: 0.7rem;
+            }}
+            .data-table th, .data-table td {{
+                padding: 0.4rem 0.5rem;
+            }}
         }}
         .footer a {{
             color: {_TEXT_MUTED};
@@ -1023,20 +1162,24 @@ def _build_index(
         <div class="brand">
             <div class="brand-left">
                 <h1><span class="b-text">Boundary</span></h1>
-                <span class="test-name">tool-overload</span>
-            </div>
-            <div class="brand-right">
-                <a href="https://github.com/sixdegree-ai/boundary" class="gh-link" title="View on GitHub">
-                    {gh_icon}
-                </a>
                 <a href="https://sixdegree.ai" class="sixdegree-badge">
                     <span class="sd-by">by</span>
                     <span class="sd-logo">{logo_svg}</span>
                     <span class="sd-text"><span class="sd-six">six</span><span class="sd-degree">degree</span></span>
                 </a>
             </div>
+            <div class="brand-right">
+                <a href="https://github.com/sixdegree-ai/boundary" class="gh-btn">
+                    <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                    View on GitHub
+                </a>
+            </div>
         </div>
         <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Test</div>
+                <div class="stat-value">tool-overload</div>
+            </div>
             <div class="stat">
                 <div class="stat-label">Run</div>
                 <div class="stat-value"><code>{run_label}</code></div>
@@ -1066,6 +1209,9 @@ def _build_index(
     <div class="grid">
         {cards}
     </div>
+    <div style="max-width:1400px;margin:2rem auto 0">
+        <a href="data.html" class="gh-btn">View Raw Data</a>
+    </div>
     <div class="footer">
         <span>Generated by <a href="https://github.com/sixdegree-ai/boundary">Boundary</a></span>
         <a href="https://sixdegree.ai">sixdegree.ai</a>
@@ -1076,6 +1222,96 @@ def _build_index(
     index_path = output_dir / "index.html"
     index_path.write_text(html)
     console.print("  [green]Saved index.html[/green]")
+
+    # Write data page
+    if data_table:
+        data_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boundary Data - {run_label}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Satoshi:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
+            background: {_BG};
+            color: {_TEXT};
+            font-family: JetBrains Mono, SF Mono, Consolas, monospace;
+            padding: 2rem;
+        }}
+        .header {{
+            max-width: 1400px;
+            margin: 0 auto 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }}
+        .back {{
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: {_TEXT_MUTED};
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }}
+        .back:hover {{ color: {_TEXT}; }}
+        h1 {{
+            font-family: Satoshi, system-ui, sans-serif;
+            font-weight: 900;
+            font-size: 1.4rem;
+            letter-spacing: -0.03em;
+        }}
+        .data-section {{
+            max-width: 1400px;
+            margin: 0 auto;
+        }}
+        .table-wrap {{
+            overflow-x: auto;
+        }}
+        .data-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }}
+        .data-table th {{
+            text-align: left;
+            padding: 0.6rem 0.8rem;
+            border-bottom: 2px solid {_BORDER};
+            color: {_TEXT_MUTED};
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            user-select: none;
+        }}
+        .data-table th:hover {{
+            color: {_TEXT};
+        }}
+        .data-table td {{
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid {_BORDER};
+            color: {_TEXT};
+        }}
+        .data-table tr:hover {{
+            background: {_SURFACE};
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="index.html" class="back">&larr; Back to charts</a>
+        <h1>Raw Data &mdash; <code>{run_label}</code></h1>
+    </div>
+    {data_table}
+</body>
+</html>"""
+        data_path = output_dir / "data.html"
+        data_path.write_text(data_html)
+        console.print("  [green]Saved data.html[/green]")
 
 
 # ---------------------------------------------------------------------------

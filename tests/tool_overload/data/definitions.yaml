@@ -599,3 +599,300 @@ tools:
     parameters:
       secret_id: { type: string, required: true, description: "Secret name or ARN" }
       region: { type: string, required: false, description: "AWS region" }
+
+  # === Grafana Tools ===
+  - name: grafana_list_dashboards
+    description: List all Grafana dashboards with optional folder and tag filtering
+    parameters:
+      folder_id: { type: string, required: false, description: "Folder ID to filter by" }
+      tag: { type: string, required: false, description: "Filter by tag" }
+
+  - name: grafana_get_dashboard
+    description: Get a Grafana dashboard by UID including all panels and queries
+    parameters:
+      uid: { type: string, required: true, description: "Dashboard UID" }
+
+  - name: grafana_create_dashboard
+    description: Create a new Grafana dashboard with panels and data sources
+    parameters:
+      title: { type: string, required: true, description: "Dashboard title" }
+      panels: { type: string, required: true, description: "JSON panel definitions" }
+      folder_id: { type: string, required: false, description: "Folder ID" }
+
+  - name: grafana_list_alerts
+    description: List all Grafana alert rules with optional state filtering
+    parameters:
+      state: { type: string, required: false, description: "Filter by state (alerting, pending, normal)" }
+
+  - name: grafana_get_alert
+    description: Get details of a specific Grafana alert rule
+    parameters:
+      uid: { type: string, required: true, description: "Alert rule UID" }
+
+  - name: grafana_silence_alert
+    description: Create a silence for a Grafana alert to suppress notifications
+    parameters:
+      matchers: { type: string, required: true, description: "JSON label matchers" }
+      starts_at: { type: string, required: true, description: "Silence start time" }
+      ends_at: { type: string, required: true, description: "Silence end time" }
+      comment: { type: string, required: false, description: "Silence reason" }
+
+  - name: grafana_query_datasource
+    description: Execute a query against a Grafana data source (Prometheus, Loki, etc.)
+    parameters:
+      datasource_uid: { type: string, required: true, description: "Data source UID" }
+      query: { type: string, required: true, description: "Query expression" }
+      from_ts: { type: string, required: false, description: "Start time" }
+      to_ts: { type: string, required: false, description: "End time" }
+
+  - name: grafana_list_datasources
+    description: List all configured Grafana data sources
+    parameters: {}
+
+  - name: grafana_get_annotations
+    description: Get annotations for a Grafana dashboard or panel
+    parameters:
+      dashboard_id: { type: string, required: false, description: "Dashboard ID" }
+      from_ts: { type: string, required: false, description: "Start time" }
+      to_ts: { type: string, required: false, description: "End time" }
+
+  - name: grafana_create_annotation
+    description: Create an annotation on a Grafana dashboard to mark an event
+    parameters:
+      dashboard_id: { type: string, required: true, description: "Dashboard ID" }
+      text: { type: string, required: true, description: "Annotation text" }
+      tags: { type: string, required: false, description: "Comma-separated tags" }
+
+  # === Terraform Cloud Tools ===
+  - name: terraform_list_workspaces
+    description: List all workspaces in a Terraform Cloud organization
+    parameters:
+      organization: { type: string, required: true, description: "Organization name" }
+
+  - name: terraform_get_workspace
+    description: Get details of a Terraform Cloud workspace including current state version
+    parameters:
+      organization: { type: string, required: true, description: "Organization name" }
+      workspace: { type: string, required: true, description: "Workspace name" }
+
+  - name: terraform_create_run
+    description: Trigger a new Terraform plan and apply run in a workspace
+    parameters:
+      workspace_id: { type: string, required: true, description: "Workspace ID" }
+      message: { type: string, required: false, description: "Run message" }
+      auto_apply: { type: boolean, required: false, description: "Auto-apply after plan" }
+
+  - name: terraform_get_run
+    description: Get the status and details of a Terraform Cloud run
+    parameters:
+      run_id: { type: string, required: true, description: "Run ID" }
+
+  - name: terraform_get_plan_output
+    description: Get the plan output for a Terraform run showing resources to create, update, or destroy
+    parameters:
+      plan_id: { type: string, required: true, description: "Plan ID" }
+
+  - name: terraform_list_state_versions
+    description: List state versions for a workspace showing infrastructure history
+    parameters:
+      workspace_id: { type: string, required: true, description: "Workspace ID" }
+
+  - name: terraform_get_state_outputs
+    description: Get output values from the current state of a Terraform workspace
+    parameters:
+      workspace_id: { type: string, required: true, description: "Workspace ID" }
+
+  - name: terraform_lock_workspace
+    description: Lock a Terraform Cloud workspace to prevent new runs
+    parameters:
+      workspace_id: { type: string, required: true, description: "Workspace ID" }
+      reason: { type: string, required: false, description: "Lock reason" }
+
+  - name: terraform_list_variables
+    description: List all variables defined in a Terraform Cloud workspace
+    parameters:
+      workspace_id: { type: string, required: true, description: "Workspace ID" }
+
+  - name: terraform_set_variable
+    description: Create or update a variable in a Terraform Cloud workspace
+    parameters:
+      workspace_id: { type: string, required: true, description: "Workspace ID" }
+      key: { type: string, required: true, description: "Variable key" }
+      value: { type: string, required: true, description: "Variable value" }
+      sensitive: { type: boolean, required: false, description: "Mark as sensitive" }
+
+  # === Docker Tools ===
+  - name: docker_list_containers
+    description: List Docker containers with optional status filtering
+    parameters:
+      all: { type: boolean, required: false, description: "Show all containers (including stopped)" }
+      status: { type: string, required: false, description: "Filter by status (running, exited, paused)" }
+
+  - name: docker_inspect_container
+    description: Get detailed information about a Docker container including config, networking, and mounts
+    parameters:
+      container_id: { type: string, required: true, description: "Container ID or name" }
+
+  - name: docker_container_logs
+    description: Get logs from a Docker container
+    parameters:
+      container_id: { type: string, required: true, description: "Container ID or name" }
+      tail: { type: integer, required: false, description: "Number of lines from end" }
+      since: { type: string, required: false, description: "Show logs since timestamp" }
+
+  - name: docker_stop_container
+    description: Stop a running Docker container
+    parameters:
+      container_id: { type: string, required: true, description: "Container ID or name" }
+      timeout: { type: integer, required: false, description: "Seconds to wait before killing" }
+
+  - name: docker_restart_container
+    description: Restart a Docker container
+    parameters:
+      container_id: { type: string, required: true, description: "Container ID or name" }
+
+  - name: docker_list_images
+    description: List Docker images on the host
+    parameters:
+      filter: { type: string, required: false, description: "Filter by reference" }
+
+  - name: docker_pull_image
+    description: Pull a Docker image from a registry
+    parameters:
+      image: { type: string, required: true, description: "Image reference (e.g. nginx:latest)" }
+
+  - name: docker_list_volumes
+    description: List Docker volumes
+    parameters: {}
+
+  - name: docker_list_networks
+    description: List Docker networks
+    parameters: {}
+
+  - name: docker_exec_command
+    description: Execute a command inside a running Docker container
+    parameters:
+      container_id: { type: string, required: true, description: "Container ID or name" }
+      command: { type: string, required: true, description: "Command to execute" }
+
+  # === Linear Tools ===
+  - name: linear_list_issues
+    description: List Linear issues with optional filtering by team, status, or assignee
+    parameters:
+      team_id: { type: string, required: false, description: "Team ID" }
+      status: { type: string, required: false, description: "Filter by status name" }
+      assignee_id: { type: string, required: false, description: "Assignee user ID" }
+
+  - name: linear_get_issue
+    description: Get detailed information about a specific Linear issue
+    parameters:
+      issue_id: { type: string, required: true, description: "Issue ID or identifier (e.g. ENG-123)" }
+
+  - name: linear_create_issue
+    description: Create a new Linear issue in a team
+    parameters:
+      team_id: { type: string, required: true, description: "Team ID" }
+      title: { type: string, required: true, description: "Issue title" }
+      description: { type: string, required: false, description: "Issue description (markdown)" }
+      priority: { type: integer, required: false, description: "Priority (0=none, 1=urgent, 2=high, 3=medium, 4=low)" }
+
+  - name: linear_update_issue
+    description: Update fields on an existing Linear issue
+    parameters:
+      issue_id: { type: string, required: true, description: "Issue ID" }
+      title: { type: string, required: false, description: "New title" }
+      status: { type: string, required: false, description: "New status name" }
+      assignee_id: { type: string, required: false, description: "New assignee" }
+
+  - name: linear_add_comment
+    description: Add a comment to a Linear issue
+    parameters:
+      issue_id: { type: string, required: true, description: "Issue ID" }
+      body: { type: string, required: true, description: "Comment body (markdown)" }
+
+  - name: linear_list_teams
+    description: List all Linear teams in the workspace
+    parameters: {}
+
+  - name: linear_list_projects
+    description: List Linear projects with optional team filtering
+    parameters:
+      team_id: { type: string, required: false, description: "Filter by team ID" }
+
+  - name: linear_get_project
+    description: Get details of a Linear project including progress and milestones
+    parameters:
+      project_id: { type: string, required: true, description: "Project ID" }
+
+  - name: linear_list_cycles
+    description: List cycles (sprints) for a Linear team
+    parameters:
+      team_id: { type: string, required: true, description: "Team ID" }
+
+  - name: linear_search_issues
+    description: Search Linear issues by text query across all teams
+    parameters:
+      query: { type: string, required: true, description: "Search query" }
+
+  # === Notion Tools ===
+  - name: notion_search
+    description: Search across all Notion pages and databases by title or content
+    parameters:
+      query: { type: string, required: true, description: "Search query" }
+      filter: { type: string, required: false, description: "Filter by object type (page or database)" }
+
+  - name: notion_get_page
+    description: Get a Notion page by ID including its properties and content blocks
+    parameters:
+      page_id: { type: string, required: true, description: "Page ID" }
+
+  - name: notion_create_page
+    description: Create a new Notion page in a database or as a child of another page
+    parameters:
+      parent_id: { type: string, required: true, description: "Parent database or page ID" }
+      title: { type: string, required: true, description: "Page title" }
+      properties: { type: string, required: false, description: "JSON properties" }
+
+  - name: notion_update_page
+    description: Update properties on an existing Notion page
+    parameters:
+      page_id: { type: string, required: true, description: "Page ID" }
+      properties: { type: string, required: true, description: "JSON properties to update" }
+
+  - name: notion_query_database
+    description: Query a Notion database with filters and sorts
+    parameters:
+      database_id: { type: string, required: true, description: "Database ID" }
+      filter: { type: string, required: false, description: "JSON filter object" }
+      sorts: { type: string, required: false, description: "JSON sorts array" }
+
+  - name: notion_add_comment
+    description: Add a comment to a Notion page or discussion thread
+    parameters:
+      page_id: { type: string, required: true, description: "Page ID" }
+      body: { type: string, required: true, description: "Comment body (rich text)" }
+
+  - name: notion_list_databases
+    description: List all Notion databases the integration has access to
+    parameters: {}
+
+  - name: notion_get_block_children
+    description: Get the child content blocks of a Notion page or block
+    parameters:
+      block_id: { type: string, required: true, description: "Block or page ID" }
+
+  - name: notion_delete_block
+    description: Delete a block from a Notion page
+    parameters:
+      block_id: { type: string, required: true, description: "Block ID to delete" }
+
+  - name: notion_list_users
+    description: List all users in the Notion workspace
+    parameters: {}
+
+  - name: grafana_update_dashboard
+    description: Update an existing Grafana dashboard with new panels or configuration
+    parameters:
+      uid: { type: string, required: true, description: "Dashboard UID" }
+      dashboard: { type: string, required: true, description: "JSON dashboard model" }
+      overwrite: { type: boolean, required: false, description: "Overwrite existing" }

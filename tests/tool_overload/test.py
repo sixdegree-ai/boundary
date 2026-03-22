@@ -46,7 +46,8 @@ class ToolOverloadPlugin:
     default=["random"],
     help="Disclosure mode(s). Specify multiple for comparison.",
 )
-def _run(provider, tool_counts, trials, seed, categories, limit, mode):
+@click.option("--run-id", default=None, help="Join an existing run ID instead of creating a new one.")
+def _run(provider, tool_counts, trials, seed, categories, limit, mode, run_id):
     """Run the tool overload benchmark."""
     import uuid
 
@@ -54,7 +55,8 @@ def _run(provider, tool_counts, trials, seed, categories, limit, mode):
 
     from .runner import BenchmarkConfig, run_benchmark, save_results
 
-    run_id = uuid.uuid4().hex[:12]
+    if run_id is None:
+        run_id = uuid.uuid4().hex[:12]
     n_providers = len(provider)
     n_modes = len(mode)
     console.print(f"\n[bold]Run {run_id}[/bold]: {n_providers} provider(s) x {n_modes} mode(s)")

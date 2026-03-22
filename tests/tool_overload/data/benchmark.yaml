@@ -606,3 +606,258 @@ prompts:
     expected_tool: datadog_get_metrics
     category: ambiguous
     notes: "Could be Datadog metrics or CloudWatch metrics"
+
+  # === Grafana (direct) ===
+  - id: gf_001
+    prompt: "List all Grafana dashboards tagged with 'production'"
+    expected_tool: grafana_list_dashboards
+    category: direct
+
+  - id: gf_002
+    prompt: "Get the API latency Grafana dashboard"
+    expected_tool: grafana_get_dashboard
+    category: direct
+
+  - id: gf_003
+    prompt: "Create a new Grafana dashboard for the payments service"
+    expected_tool: grafana_create_dashboard
+    category: direct
+
+  - id: gf_004
+    prompt: "Show me all firing Grafana alerts"
+    expected_tool: grafana_list_alerts
+    category: direct
+
+  - id: gf_005
+    prompt: "Silence the high CPU alert in Grafana for 2 hours"
+    expected_tool: grafana_silence_alert
+    category: direct
+
+  - id: gf_006
+    prompt: "Run a PromQL query against our Prometheus datasource in Grafana"
+    expected_tool: grafana_query_datasource
+    category: direct
+
+  - id: gf_007
+    prompt: "List all data sources configured in Grafana"
+    expected_tool: grafana_list_datasources
+    category: direct
+
+  - id: gf_008
+    prompt: "Add an annotation to the API dashboard marking today's deploy"
+    expected_tool: grafana_create_annotation
+    category: direct
+
+  # === Terraform Cloud (direct) ===
+  - id: tf_001
+    prompt: "List all Terraform Cloud workspaces in our organization"
+    expected_tool: terraform_list_workspaces
+    category: direct
+
+  - id: tf_002
+    prompt: "Get the current state of the production-vpc Terraform workspace"
+    expected_tool: terraform_get_workspace
+    category: direct
+
+  - id: tf_003
+    prompt: "Trigger a Terraform plan and apply for the staging workspace"
+    expected_tool: terraform_create_run
+    category: direct
+
+  - id: tf_004
+    prompt: "Check the status of the latest Terraform run"
+    expected_tool: terraform_get_run
+    category: direct
+
+  - id: tf_005
+    prompt: "Show me what resources the Terraform plan will change"
+    expected_tool: terraform_get_plan_output
+    category: direct
+
+  - id: tf_006
+    prompt: "List the Terraform state history for the production workspace"
+    expected_tool: terraform_list_state_versions
+    category: direct
+
+  - id: tf_007
+    prompt: "Lock the production Terraform workspace during the maintenance window"
+    expected_tool: terraform_lock_workspace
+    category: direct
+
+  - id: tf_008
+    prompt: "Show me all variables in the production Terraform workspace"
+    expected_tool: terraform_list_variables
+    category: direct
+
+  - id: tf_009
+    prompt: "Set the AWS region variable to us-west-2 in the staging workspace"
+    expected_tool: terraform_set_variable
+    category: direct
+
+  # === Docker (direct) ===
+  - id: dk_001
+    prompt: "List all running Docker containers"
+    expected_tool: docker_list_containers
+    category: direct
+
+  - id: dk_002
+    prompt: "Show me the details of the nginx container"
+    expected_tool: docker_inspect_container
+    category: direct
+
+  - id: dk_003
+    prompt: "Get the last 100 lines of logs from the api-server container"
+    expected_tool: docker_container_logs
+    category: direct
+
+  - id: dk_004
+    prompt: "Stop the redis container"
+    expected_tool: docker_stop_container
+    category: direct
+
+  - id: dk_005
+    prompt: "Restart the postgres container"
+    expected_tool: docker_restart_container
+    category: direct
+
+  - id: dk_006
+    prompt: "List all Docker images on the host"
+    expected_tool: docker_list_images
+    category: direct
+
+  - id: dk_007
+    prompt: "Pull the latest postgres:16 image"
+    expected_tool: docker_pull_image
+    category: direct
+
+  - id: dk_008
+    prompt: "Run 'pg_isready' inside the postgres container"
+    expected_tool: docker_exec_command
+    category: direct
+
+  # === Linear (direct) ===
+  - id: ln_001
+    prompt: "Show me all open Linear issues assigned to me"
+    expected_tool: linear_list_issues
+    category: direct
+
+  - id: ln_002
+    prompt: "Get the details of Linear issue ENG-423"
+    expected_tool: linear_get_issue
+    category: direct
+
+  - id: ln_003
+    prompt: "Create a high-priority Linear issue for the auth service crash"
+    expected_tool: linear_create_issue
+    category: direct
+
+  - id: ln_004
+    prompt: "Move Linear issue ENG-423 to 'In Review' status"
+    expected_tool: linear_update_issue
+    category: direct
+
+  - id: ln_005
+    prompt: "Add a comment to ENG-423 saying the fix is deployed"
+    expected_tool: linear_add_comment
+    category: direct
+
+  - id: ln_006
+    prompt: "List all Linear teams in our workspace"
+    expected_tool: linear_list_teams
+    category: direct
+
+  - id: ln_007
+    prompt: "Show me the current sprint for the engineering team in Linear"
+    expected_tool: linear_list_cycles
+    category: direct
+
+  - id: ln_008
+    prompt: "Search Linear for issues mentioning 'rate limiting'"
+    expected_tool: linear_search_issues
+    category: direct
+
+  # === Notion (direct) ===
+  - id: nt_001
+    prompt: "Search Notion for pages about the onboarding process"
+    expected_tool: notion_search
+    category: direct
+
+  - id: nt_002
+    prompt: "Get the content of the architecture decision records Notion page"
+    expected_tool: notion_get_page
+    category: direct
+
+  - id: nt_003
+    prompt: "Create a new Notion page for this week's incident retrospective"
+    expected_tool: notion_create_page
+    category: direct
+
+  - id: nt_004
+    prompt: "Update the status property on the Q2 roadmap Notion page"
+    expected_tool: notion_update_page
+    category: direct
+
+  - id: nt_005
+    prompt: "Query the engineering tasks Notion database for items due this week"
+    expected_tool: notion_query_database
+    category: direct
+
+  - id: nt_006
+    prompt: "Add a comment on the API design Notion page with my review feedback"
+    expected_tool: notion_add_comment
+    category: direct
+
+  # === Cross-service ambiguous (new services) ===
+  - id: amb_019
+    prompt: "Show me all the alerts that are currently firing"
+    expected_tool: grafana_list_alerts
+    category: ambiguous
+    notes: "Could be Grafana alerts, Datadog monitors, or CloudWatch alarms"
+
+  - id: amb_020
+    prompt: "Create a ticket for the authentication bug"
+    expected_tool: jira_create_issue
+    category: ambiguous
+    notes: "Could be Jira, Linear, GitHub, or GitLab issue"
+
+  - id: amb_021
+    prompt: "Show me the logs from the API service"
+    expected_tool: docker_container_logs
+    category: ambiguous
+    notes: "Could be Docker logs, Kubernetes pod logs, or Datadog logs"
+
+  - id: amb_022
+    prompt: "What's the current state of our infrastructure?"
+    expected_tool: terraform_get_workspace
+    category: ambiguous
+    notes: "Could be Terraform state, AWS instances, or Kubernetes cluster"
+
+  - id: amb_023
+    prompt: "Search for documentation about the deployment process"
+    expected_tool: notion_search
+    category: ambiguous
+    notes: "Could be Notion search or Confluence search"
+
+  - id: amb_024
+    prompt: "Add a comment saying 'Resolved' to the tracking issue"
+    expected_tool: linear_add_comment
+    category: ambiguous
+    notes: "Could be Linear, Jira, GitHub, GitLab, or Notion comment"
+
+  - id: amb_025
+    prompt: "Show me the dashboard for our production services"
+    expected_tool: grafana_get_dashboard
+    category: ambiguous
+    notes: "Could be Grafana or Datadog dashboard"
+
+  - id: amb_026
+    prompt: "Restart the failing service"
+    expected_tool: k8s_restart_deployment
+    category: ambiguous
+    notes: "Could be Kubernetes deployment restart or Docker container restart"
+
+  - id: amb_027
+    prompt: "Check the status of the latest deployment"
+    expected_tool: terraform_get_run
+    category: ambiguous
+    notes: "Could be Terraform run, GitLab pipeline, or Kubernetes deployment"
