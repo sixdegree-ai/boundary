@@ -6,5 +6,29 @@ dist/
 build/
 results/
 .env
+.env.*
 uv.lock
 *.swp
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+*.egg-info/
+
+# Linting
+.ruff_cache/
+
+# Recordings/demos
+*.cast

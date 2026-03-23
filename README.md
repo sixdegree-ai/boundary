@@ -4,6 +4,17 @@ Open-source agent context testing framework.
 
 Boundary runs reproducible tests against LLM providers to measure how models behave under real-world agent conditions. Each test is self-contained with its own data, runner, and analysis.
 
+## Why this matters
+
+LLM accuracy degrades as tool availability increases. Our benchmarks show:
+
+- **All models degrade** — accuracy drops begin between 25-50 tools across providers
+- **OpenAI has a 128-tool limit** — GPT models fail completely beyond this constraint
+- **Similar services create confusion** — Datadog/Grafana, Linear/Jira, GitHub/GitLab consistently generate cross-service errors
+- **Latency varies 30x** — from sub-1s (GPT-5.4 Mini) to 27s (Claude Sonnet at 150 tools)
+
+See the [full analysis](https://sixdegree.ai/blog/mcp-tool-overload) for detailed findings.
+
 ## Tests
 
 | Test | What it measures |
@@ -44,16 +55,18 @@ Use shortcuts or full model names:
 uv run boundary list-providers
 ```
 
-| Provider  | Prefix       | Examples                                |
-|-----------|--------------|-----------------------------------------|
-| Anthropic | `claude-`    | `claude-sonnet`, `claude-haiku`         |
-| OpenAI    | `gpt-`, `o1` | `gpt-4o`, `gpt-4o-mini`                |
-| xAI       | `grok-`      | `grok-3`, `grok-3-mini`                |
-| Google    | `gemini-`    | `gemini-flash`, `gemini-pro`            |
+| Provider  | Prefix       | Examples                                           |
+|-----------|--------------|---------------------------------------------------|
+| Anthropic | `claude-`    | `claude-sonnet`, `claude-haiku`, `claude-opus`    |
+| OpenAI    | `gpt-`       | `gpt-4o`, `gpt-4o-mini`, `gpt-5.4`, `gpt-5.4-mini`|
+| xAI       | `grok-`      | `grok-4`, `grok-fast`                             |
+| Google    | `gemini-`    | `gemini-flash`, `gemini-pro`                      |
+
+**Note:** OpenAI models have a 128-tool limit. Use Anthropic, xAI, or Google for tests exceeding this.
 
 ## Tool Overload test
 
-99 tool definitions from production agent systems across 11 services (GitHub, GitLab, Jira, Confluence, Kubernetes, AWS, Datadog, Slack, PagerDuty, Okta, Snyk). Tests how well LLMs pick the correct tool when the available toolset ranges from 5 to 99.
+150 tool definitions from production agent systems across 16 services (GitHub, GitLab, Jira, Confluence, Kubernetes, AWS, Datadog, Slack, PagerDuty, Okta, Snyk, Grafana, Terraform Cloud, Docker, Linear, Notion). Tests how well LLMs pick the correct tool when the available toolset ranges from 5 to 150.
 
 ### What it measures
 
@@ -69,7 +82,7 @@ The test can compare tool selection accuracy across different disclosure strateg
 | Mode | Flag | Description |
 |------|------|-------------|
 | `random` | `-m random` | Random subset of N tools (default) |
-| `all` | `-m all` | All 99 tools every time |
+| `all` | `-m all` | All 150 tools every time |
 | `disclosed` | `-m disclosed` | Only tools from the target service (5-11 tools) |
 | `noisy` | `-m noisy` | Target service + one random other service (11-22 tools) |
 
@@ -161,8 +174,8 @@ boundary/
       tools.py              # Tool definition loader
       prompts.py            # Prompt loader
       data/
-        definitions.yaml    # 99 tool definitions across 11 services
-        benchmark.yaml      # 113 prompts (90 direct + 23 ambiguous)
+        definitions.yaml    # 150 tool definitions across 16 services
+        benchmark.yaml      # 161 prompts (129 direct + 32 ambiguous)
   results/                  # Output (gitignored)
     tool_overload/
       *.json

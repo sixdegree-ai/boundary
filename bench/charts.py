@@ -778,28 +778,32 @@ def _build_index(
     data_table = ""
     if df is not None and len(df) > 0:
         has_cost = "cost_usd" in df.columns and df["cost_usd"].sum() > 0
-        grouped = df.groupby(["provider", "num_tools"]).agg(
-            accuracy=("correct", "mean"),
-            cross_svc=("cross_service_error", "mean"),
-            avg_latency=("latency_ms", "mean"),
-            avg_tokens=("input_tokens", "mean"),
-            cost=("cost_usd", "sum") if has_cost else ("correct", "count"),
-            calls=("correct", "count"),
-        ).reset_index()
+        grouped = (
+            df.groupby(["provider", "num_tools"])
+            .agg(
+                accuracy=("correct", "mean"),
+                cross_svc=("cross_service_error", "mean"),
+                avg_latency=("latency_ms", "mean"),
+                avg_tokens=("input_tokens", "mean"),
+                cost=("cost_usd", "sum") if has_cost else ("correct", "count"),
+                calls=("correct", "count"),
+            )
+            .reset_index()
+        )
 
         rows = ""
         for _, r in grouped.iterrows():
-            cost_cell = f'${r["cost"]:.4f}' if has_cost else "—"
+            cost_cell = f"${r['cost']:.4f}" if has_cost else "—"
             rows += f"""
             <tr>
-                <td>{_short(r['provider'])}</td>
-                <td>{int(r['num_tools'])}</td>
-                <td>{r['accuracy'] * 100:.1f}%</td>
-                <td>{r['cross_svc'] * 100:.1f}%</td>
-                <td>{r['avg_latency']:.0f}ms</td>
-                <td>{r['avg_tokens']:.0f}</td>
+                <td>{_short(r["provider"])}</td>
+                <td>{int(r["num_tools"])}</td>
+                <td>{r["accuracy"] * 100:.1f}%</td>
+                <td>{r["cross_svc"] * 100:.1f}%</td>
+                <td>{r["avg_latency"]:.0f}ms</td>
+                <td>{r["avg_tokens"]:.0f}</td>
                 <td>{cost_cell}</td>
-                <td>{int(r['calls'])}</td>
+                <td>{int(r["calls"])}</td>
             </tr>"""
 
         data_table = f"""
